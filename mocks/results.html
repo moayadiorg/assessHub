@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Assessment Results - Assessment Platform</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .results-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 24px;
+      margin: -24px -24px 24px -24px;
+    }
+    .overall-score {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      margin-top: 16px;
+    }
+    .score-circle {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: conic-gradient(var(--primary-color) 76%, var(--border) 76%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .score-circle::before {
+      content: '';
+      position: absolute;
+      width: 80px;
+      height: 80px;
+      background: white;
+      border-radius: 50%;
+    }
+    .score-value {
+      position: relative;
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--primary-color);
+    }
+    .score-breakdown {
+      display: flex;
+      gap: 32px;
+    }
+    .score-item {
+      text-align: center;
+    }
+    .score-item-value {
+      font-size: 24px;
+      font-weight: 600;
+    }
+    .score-item-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+    .chart-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+    @media (max-width: 1200px) {
+      .chart-section {
+        grid-template-columns: 1fr;
+      }
+    }
+    .radar-chart {
+      width: 100%;
+      height: 350px;
+      position: relative;
+    }
+    .radar-chart svg {
+      width: 100%;
+      height: 100%;
+    }
+    .heatmap-grid {
+      display: grid;
+      gap: 4px;
+    }
+    .heatmap-row {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+    .heatmap-label {
+      width: 150px;
+      font-size: 12px;
+      text-align: right;
+      padding-right: 8px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .heatmap-cells {
+      display: flex;
+      gap: 4px;
+    }
+    .heatmap-cell {
+      width: 36px;
+      height: 36px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: white;
+      cursor: pointer;
+      transition: transform 0.1s ease;
+    }
+    .heatmap-cell:hover {
+      transform: scale(1.1);
+    }
+    .heatmap-cell.level-1 { background: #ef4444; }
+    .heatmap-cell.level-2 { background: #f97316; }
+    .heatmap-cell.level-3 { background: #eab308; }
+    .heatmap-cell.level-4 { background: #84cc16; }
+    .heatmap-cell.level-5 { background: #22c55e; }
+    .heatmap-cell.empty { background: var(--border); color: var(--text-secondary); }
+    .category-scores {
+      margin-top: 24px;
+    }
+    .category-score-row {
+      display: flex;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .category-score-row:last-child {
+      border-bottom: none;
+    }
+    .category-name {
+      width: 180px;
+      font-weight: 500;
+    }
+    .category-bar {
+      flex: 1;
+      height: 24px;
+      background: var(--background);
+      border-radius: 6px;
+      overflow: hidden;
+      margin: 0 16px;
+      position: relative;
+    }
+    .category-bar-fill {
+      height: 100%;
+      border-radius: 6px;
+      transition: width 0.3s ease;
+    }
+    .category-bar-fill.level-1 { background: #ef4444; }
+    .category-bar-fill.level-2 { background: #f97316; }
+    .category-bar-fill.level-3 { background: #eab308; }
+    .category-bar-fill.level-4 { background: #84cc16; }
+    .category-bar-fill.level-5 { background: #22c55e; }
+    .category-score-value {
+      width: 60px;
+      text-align: right;
+      font-weight: 600;
+    }
+    .legend {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      margin-top: 16px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+    }
+    .legend-color {
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+    }
+    .recommendations {
+      margin-top: 24px;
+    }
+    .recommendation-card {
+      display: flex;
+      gap: 16px;
+      padding: 16px;
+      background: var(--background);
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+    .recommendation-priority {
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: white;
+      flex-shrink: 0;
+    }
+    .priority-high { background: #ef4444; }
+    .priority-medium { background: #f59e0b; }
+    .priority-low { background: #10b981; }
+    .recommendation-content h4 {
+      font-size: 15px;
+      margin-bottom: 4px;
+    }
+    .recommendation-content p {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+            <path d="M2 17l10 5 10-5"/>
+            <path d="M2 12l10 5 10-5"/>
+          </svg>
+          <span>AssessHub</span>
+        </div>
+        <button class="sidebar-toggle" onclick="toggleSidebar()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
+          </svg>
+        </button>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-title">Main</div>
+          <a href="index.html" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            <span>Dashboard</span>
+          </a>
+          <a href="assessment-list.html" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 11H3v10h6V11z"/>
+              <path d="M21 3h-6v18h6V3z"/>
+              <path d="M15 8H9v13h6V8z"/>
+            </svg>
+            <span>Assessments</span>
+          </a>
+          <a href="results.html" class="nav-item active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="20" x2="18" y2="10"/>
+              <line x1="12" y1="20" x2="12" y2="4"/>
+              <line x1="6" y1="20" x2="6" y2="14"/>
+            </svg>
+            <span>Reports</span>
+          </a>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-title">Administration</div>
+          <a href="admin-types.html" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="12" y1="18" x2="12" y2="12"/>
+              <line x1="9" y1="15" x2="15" y2="15"/>
+            </svg>
+            <span>Assessment Types</span>
+          </a>
+          <a href="admin-questions.html" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <span>Questions</span>
+          </a>
+          <a href="admin-csv.html" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <span>Import CSV</span>
+          </a>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="main-wrapper">
+      <header class="main-header">
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <a href="assessment-list.html" class="btn btn-ghost btn-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="19" y1="12" x2="5" y2="12"/>
+              <polyline points="12 19 5 12 12 5"/>
+            </svg>
+          </a>
+          <h1>Assessment Results</h1>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-secondary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/>
+              <polyline points="16 6 12 2 8 6"/>
+              <line x1="12" y1="2" x2="12" y2="15"/>
+            </svg>
+            Share
+          </button>
+          <a href="export.html" class="btn btn-primary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Export PDF
+          </a>
+          <div class="avatar">JD</div>
+        </div>
+      </header>
+
+      <main class="main-content">
+        <!-- Results Header -->
+        <div class="results-header">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+              <h2 style="font-size: 24px; margin-bottom: 4px;">Cloud Infrastructure Review</h2>
+              <div style="color: var(--text-secondary);">
+                <span>Acme Corp</span> &bull;
+                <span>Cloud Maturity Model</span> &bull;
+                <span>Completed Jan 15, 2024</span>
+              </div>
+            </div>
+          </div>
+          <div class="overall-score">
+            <div class="score-circle">
+              <span class="score-value">3.8</span>
+            </div>
+            <div>
+              <div style="font-size: 18px; font-weight: 600; margin-bottom: 4px;">Defined Level</div>
+              <div style="color: var(--text-secondary);">Your organization has standardized processes across most areas with room for optimization.</div>
+            </div>
+            <div class="score-breakdown" style="margin-left: auto;">
+              <div class="score-item">
+                <div class="score-item-value">20</div>
+                <div class="score-item-label">Questions</div>
+              </div>
+              <div class="score-item">
+                <div class="score-item-value">5</div>
+                <div class="score-item-label">Categories</div>
+              </div>
+              <div class="score-item">
+                <div class="score-item-value">3</div>
+                <div class="score-item-label">High Priority</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="chart-section">
+          <!-- Radar/Spider Chart -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Category Overview</h3>
+            </div>
+            <div class="radar-chart">
+              <svg viewBox="0 0 400 350">
+                <!-- Grid circles -->
+                <g transform="translate(200, 175)">
+                  <!-- Level circles -->
+                  <circle cx="0" cy="0" r="30" fill="none" stroke="#e5e7eb" stroke-width="1"/>
+                  <circle cx="0" cy="0" r="60" fill="none" stroke="#e5e7eb" stroke-width="1"/>
+                  <circle cx="0" cy="0" r="90" fill="none" stroke="#e5e7eb" stroke-width="1"/>
+                  <circle cx="0" cy="0" r="120" fill="none" stroke="#e5e7eb" stroke-width="1"/>
+                  <circle cx="0" cy="0" r="150" fill="none" stroke="#e5e7eb" stroke-width="1"/>
+
+                  <!-- Axis lines -->
+                  <line x1="0" y1="0" x2="0" y2="-150" stroke="#e5e7eb" stroke-width="1"/>
+                  <line x1="0" y1="0" x2="142.66" y2="-46.35" stroke="#e5e7eb" stroke-width="1"/>
+                  <line x1="0" y1="0" x2="88.17" y2="121.35" stroke="#e5e7eb" stroke-width="1"/>
+                  <line x1="0" y1="0" x2="-88.17" y2="121.35" stroke="#e5e7eb" stroke-width="1"/>
+                  <line x1="0" y1="0" x2="-142.66" y2="-46.35" stroke="#e5e7eb" stroke-width="1"/>
+
+                  <!-- Data polygon -->
+                  <polygon
+                    points="0,-105 114.13,-37.08 52.9,72.81 -70.54,97.08 -99.86,-32.45"
+                    fill="rgba(0, 102, 204, 0.2)"
+                    stroke="#0066cc"
+                    stroke-width="2"
+                  />
+
+                  <!-- Data points -->
+                  <circle cx="0" cy="-105" r="5" fill="#0066cc"/>
+                  <circle cx="114.13" cy="-37.08" r="5" fill="#0066cc"/>
+                  <circle cx="52.9" cy="72.81" r="5" fill="#0066cc"/>
+                  <circle cx="-70.54" cy="97.08" r="5" fill="#0066cc"/>
+                  <circle cx="-99.86" cy="-32.45" r="5" fill="#0066cc"/>
+
+                  <!-- Labels -->
+                  <text x="0" y="-165" text-anchor="middle" font-size="12" fill="#1a1a1a">Infrastructure (3.5)</text>
+                  <text x="165" y="-40" text-anchor="start" font-size="12" fill="#1a1a1a">Security (4.0)</text>
+                  <text x="100" y="140" text-anchor="start" font-size="12" fill="#1a1a1a">Operations (2.5)</text>
+                  <text x="-100" y="140" text-anchor="end" font-size="12" fill="#1a1a1a">Governance (3.5)</text>
+                  <text x="-165" y="-40" text-anchor="end" font-size="12" fill="#1a1a1a">Cost Mgmt (2.2)</text>
+                </g>
+              </svg>
+            </div>
+            <div class="legend">
+              <div class="legend-item"><div class="legend-color" style="background: #ef4444;"></div> 1 - Initial</div>
+              <div class="legend-item"><div class="legend-color" style="background: #f97316;"></div> 2 - Managed</div>
+              <div class="legend-item"><div class="legend-color" style="background: #eab308;"></div> 3 - Defined</div>
+              <div class="legend-item"><div class="legend-color" style="background: #84cc16;"></div> 4 - Quantitative</div>
+              <div class="legend-item"><div class="legend-color" style="background: #22c55e;"></div> 5 - Optimizing</div>
+            </div>
+          </div>
+
+          <!-- Heatmap -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Question-Level Heatmap</h3>
+            </div>
+            <div class="heatmap-grid">
+              <div style="display: flex; gap: 4px; margin-bottom: 8px; margin-left: 158px;">
+                <div style="width: 36px; text-align: center; font-size: 11px; color: var(--text-secondary);">Q1</div>
+                <div style="width: 36px; text-align: center; font-size: 11px; color: var(--text-secondary);">Q2</div>
+                <div style="width: 36px; text-align: center; font-size: 11px; color: var(--text-secondary);">Q3</div>
+                <div style="width: 36px; text-align: center; font-size: 11px; color: var(--text-secondary);">Q4</div>
+              </div>
+              <div class="heatmap-row">
+                <div class="heatmap-label">Infrastructure</div>
+                <div class="heatmap-cells">
+                  <div class="heatmap-cell level-3" title="Provisioning: 3">3</div>
+                  <div class="heatmap-cell level-4" title="State Management: 4">4</div>
+                  <div class="heatmap-cell level-3" title="Networking: 3">3</div>
+                  <div class="heatmap-cell level-4" title="DR: 4">4</div>
+                </div>
+              </div>
+              <div class="heatmap-row">
+                <div class="heatmap-label">Security</div>
+                <div class="heatmap-cells">
+                  <div class="heatmap-cell level-4" title="IAM: 4">4</div>
+                  <div class="heatmap-cell level-5" title="Encryption: 5">5</div>
+                  <div class="heatmap-cell level-3" title="Compliance: 3">3</div>
+                  <div class="heatmap-cell level-4" title="Secrets: 4">4</div>
+                </div>
+              </div>
+              <div class="heatmap-row">
+                <div class="heatmap-label">Operations</div>
+                <div class="heatmap-cells">
+                  <div class="heatmap-cell level-2" title="Monitoring: 2">2</div>
+                  <div class="heatmap-cell level-3" title="Logging: 3">3</div>
+                  <div class="heatmap-cell level-2" title="Alerting: 2">2</div>
+                  <div class="heatmap-cell level-3" title="Incident Mgmt: 3">3</div>
+                </div>
+              </div>
+              <div class="heatmap-row">
+                <div class="heatmap-label">Governance</div>
+                <div class="heatmap-cells">
+                  <div class="heatmap-cell level-4" title="Policies: 4">4</div>
+                  <div class="heatmap-cell level-3" title="Tagging: 3">3</div>
+                  <div class="heatmap-cell level-4" title="Resource Org: 4">4</div>
+                  <div class="heatmap-cell level-3" title="Change Mgmt: 3">3</div>
+                </div>
+              </div>
+              <div class="heatmap-row">
+                <div class="heatmap-label">Cost Management</div>
+                <div class="heatmap-cells">
+                  <div class="heatmap-cell level-2" title="Visibility: 2">2</div>
+                  <div class="heatmap-cell level-2" title="Optimization: 2">2</div>
+                  <div class="heatmap-cell level-3" title="Budgeting: 3">3</div>
+                  <div class="heatmap-cell level-2" title="Forecasting: 2">2</div>
+                </div>
+              </div>
+            </div>
+            <div class="legend" style="margin-top: 24px;">
+              <div class="legend-item"><div class="legend-color" style="background: #ef4444;"></div> 1</div>
+              <div class="legend-item"><div class="legend-color" style="background: #f97316;"></div> 2</div>
+              <div class="legend-item"><div class="legend-color" style="background: #eab308;"></div> 3</div>
+              <div class="legend-item"><div class="legend-color" style="background: #84cc16;"></div> 4</div>
+              <div class="legend-item"><div class="legend-color" style="background: #22c55e;"></div> 5</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Category Score Breakdown -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Category Score Breakdown</h3>
+          </div>
+          <div class="category-scores">
+            <div class="category-score-row">
+              <div class="category-name">Infrastructure</div>
+              <div class="category-bar">
+                <div class="category-bar-fill level-3" style="width: 70%;"></div>
+              </div>
+              <div class="category-score-value">3.5 / 5</div>
+            </div>
+            <div class="category-score-row">
+              <div class="category-name">Security</div>
+              <div class="category-bar">
+                <div class="category-bar-fill level-4" style="width: 80%;"></div>
+              </div>
+              <div class="category-score-value">4.0 / 5</div>
+            </div>
+            <div class="category-score-row">
+              <div class="category-name">Operations</div>
+              <div class="category-bar">
+                <div class="category-bar-fill level-2" style="width: 50%;"></div>
+              </div>
+              <div class="category-score-value">2.5 / 5</div>
+            </div>
+            <div class="category-score-row">
+              <div class="category-name">Governance</div>
+              <div class="category-bar">
+                <div class="category-bar-fill level-3" style="width: 70%;"></div>
+              </div>
+              <div class="category-score-value">3.5 / 5</div>
+            </div>
+            <div class="category-score-row">
+              <div class="category-name">Cost Management</div>
+              <div class="category-bar">
+                <div class="category-bar-fill level-2" style="width: 44%;"></div>
+              </div>
+              <div class="category-score-value">2.2 / 5</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recommendations -->
+        <div class="card mt-6">
+          <div class="card-header">
+            <h3 class="card-title">Key Recommendations</h3>
+          </div>
+          <div class="recommendations">
+            <div class="recommendation-card">
+              <div class="recommendation-priority priority-high">1</div>
+              <div class="recommendation-content">
+                <h4>Implement Comprehensive Monitoring</h4>
+                <p>Operations monitoring scored 2/5. Consider implementing centralized observability with distributed tracing, custom metrics, and proactive alerting. Tools like Datadog, New Relic, or open-source alternatives (Prometheus + Grafana) are recommended.</p>
+              </div>
+            </div>
+            <div class="recommendation-card">
+              <div class="recommendation-priority priority-high">2</div>
+              <div class="recommendation-content">
+                <h4>Establish FinOps Practice</h4>
+                <p>Cost Management overall score is 2.2/5. Implement cloud cost visibility tools, establish tagging governance for cost allocation, and create regular cost review processes with engineering teams.</p>
+              </div>
+            </div>
+            <div class="recommendation-card">
+              <div class="recommendation-priority priority-high">3</div>
+              <div class="recommendation-content">
+                <h4>Enhance Alerting Strategy</h4>
+                <p>Alerting scored 2/5. Define SLOs/SLIs, implement tiered alerting based on severity, and reduce alert fatigue by consolidating and prioritizing notifications.</p>
+              </div>
+            </div>
+            <div class="recommendation-card">
+              <div class="recommendation-priority priority-medium">4</div>
+              <div class="recommendation-content">
+                <h4>Automate Compliance Reporting</h4>
+                <p>Security compliance scored 3/5. Consider implementing continuous compliance tools like AWS Config Rules, Azure Policy, or third-party solutions for automated compliance monitoring and reporting.</p>
+              </div>
+            </div>
+            <div class="recommendation-card">
+              <div class="recommendation-priority priority-low">5</div>
+              <div class="recommendation-content">
+                <h4>Implement GitOps for Drift Detection</h4>
+                <p>Infrastructure state management is at level 4. To reach level 5, implement GitOps practices with automatic drift detection and remediation using tools like ArgoCD or Flux.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('collapsed');
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,82 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f8f9fa;
+  --foreground: #1a1a1a;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter);
+}
+
+body {
+  background: var(--gray-2);
+  color: var(--foreground);
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Score colors for maturity levels */
+.score-level-1 { --score-color: #ef4444; }
+.score-level-2 { --score-color: #f97316; }
+.score-level-3 { --score-color: #eab308; }
+.score-level-4 { --score-color: #84cc16; }
+.score-level-5 { --score-color: #22c55e; }
+
+/* Heatmap cell colors */
+.heatmap-1 { background-color: #ef4444; color: white; }
+.heatmap-2 { background-color: #f97316; color: white; }
+.heatmap-3 { background-color: #eab308; color: white; }
+.heatmap-4 { background-color: #84cc16; color: white; }
+.heatmap-5 { background-color: #22c55e; color: white; }
+
+/* Card hover effect */
+.card-hover {
+  transition: all 0.15s ease;
+}
+
+.card-hover:hover {
+  border-color: var(--accent-7);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .print-break {
+    page-break-before: always;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--gray-3);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--gray-7);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gray-8);
+}
+
+/* Radix UI Theme overrides */
+.radix-themes {
+  --default-font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Transition utilities */
+.transition-sidebar {
+  transition: width 0.2s ease, margin-left 0.2s ease;
+}

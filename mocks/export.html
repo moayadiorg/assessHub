@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Export Report - Assessment Platform</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .export-container {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 24px;
+    }
+    @media (max-width: 1200px) {
+      .export-container {
+        grid-template-columns: 1fr;
+      }
+    }
+    .preview-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .preview-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .preview-content {
+      padding: 0;
+      background: #e5e7eb;
+      min-height: 600px;
+    }
+    .pdf-preview {
+      background: white;
+      max-width: 595px;
+      margin: 24px auto;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      padding: 48px;
+    }
+    .pdf-header {
+      text-align: center;
+      padding-bottom: 24px;
+      border-bottom: 2px solid var(--primary-color);
+      margin-bottom: 24px;
+    }
+    .pdf-logo {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--primary-color);
+      margin-bottom: 8px;
+    }
+    .pdf-title {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .pdf-subtitle {
+      font-size: 16px;
+      color: var(--text-secondary);
+    }
+    .pdf-meta {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      padding: 16px;
+      background: var(--background);
+      border-radius: 8px;
+      margin-bottom: 24px;
+      font-size: 13px;
+    }
+    .pdf-meta-item {
+      text-align: center;
+    }
+    .pdf-meta-label {
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+    .pdf-meta-value {
+      font-weight: 600;
+    }
+    .pdf-score-section {
+      text-align: center;
+      padding: 24px;
+      background: linear-gradient(135deg, #e6f0ff, #f0f7ff);
+      border-radius: 12px;
+      margin-bottom: 24px;
+    }
+    .pdf-score-value {
+      font-size: 48px;
+      font-weight: 700;
+      color: var(--primary-color);
+    }
+    .pdf-score-label {
+      font-size: 18px;
+      font-weight: 600;
+      margin-top: 8px;
+    }
+    .pdf-score-desc {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+    .pdf-section-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .pdf-chart-placeholder {
+      height: 200px;
+      background: var(--background);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-secondary);
+      margin-bottom: 24px;
+    }
+    .pdf-category-row {
+      display: flex;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+    .pdf-category-name {
+      width: 140px;
+      font-weight: 500;
+    }
+    .pdf-category-bar {
+      flex: 1;
+      height: 12px;
+      background: var(--background);
+      border-radius: 6px;
+      margin: 0 12px;
+      overflow: hidden;
+    }
+    .pdf-category-fill {
+      height: 100%;
+      border-radius: 6px;
+    }
+    .pdf-category-score {
+      width: 50px;
+      text-align: right;
+      font-weight: 600;
+    }
+    .pdf-footer {
+      margin-top: 32px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--text-secondary);
+      text-align: center;
+    }
+    .options-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      height: fit-content;
+      position: sticky;
+      top: 88px;
+    }
+    .options-section {
+      margin-bottom: 24px;
+    }
+    .options-section:last-child {
+      margin-bottom: 0;
+    }
+    .options-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    .option-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .option-item:last-child {
+      border-bottom: none;
+    }
+    .option-checkbox {
+      width: 18px;
+      height: 18px;
+    }
+    .option-label {
+      flex: 1;
+      font-size: 14px;
+    }
+    .format-options {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+    .format-option {
+      padding: 12px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .format-option:hover {
+      border-color: var(--primary-color);
+    }
+    .format-option.selected {
+      border-color: var(--primary-color);
+      background: #e6f0ff;
+    }
+    .format-icon {
+      width: 32px;
+      height: 32px;
+      margin: 0 auto 8px;
+    }
+    .format-label {
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .share-section {
+      background: var(--background);
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 12px;
+    }
+    .share-link {
+      display: flex;
+      gap: 8px;
+    }
+    .share-link input {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 13px;
+      background: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+            <path d="M2 17l10 5 10-5"/>
+            <path d="M2 12l10 5 10-5"/>
+          </svg>
+          <span>AssessHub</span>
+        </div>
+        <button class="sidebar-toggle" onclick="toggleSidebar()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
+          </svg>
+        </button>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-title">Main</div>
+          <a href="index.html" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            <span>Dashboard</span>
+          </a>
+          <a href="assessment-list.html" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 11H3v10h6V11z"/>
+              <path d="M21 3h-6v18h6V3z"/>
+              <path d="M15 8H9v13h6V8z"/>
+            </svg>
+            <span>Assessments</span>
+          </a>
+          <a href="results.html" class="nav-item active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="20" x2="18" y2="10"/>
+              <line x1="12" y1="20" x2="12" y2="4"/>
+              <line x1="6" y1="20" x2="6" y2="14"/>
+            </svg>
+            <span>Reports</span>
+          </a>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-title">Administration</div>
+          <a href="admin-types.html" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="12" y1="18" x2="12" y2="12"/>
+              <line x1="9" y1="15" x2="15" y2="15"/>
+            </svg>
+            <span>Assessment Types</span>
+          </a>
+          <a href="admin-questions.html" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <span>Questions</span>
+          </a>
+          <a href="admin-csv.html" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <span>Import CSV</span>
+          </a>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="main-wrapper">
+      <header class="main-header">
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <a href="results.html" class="btn btn-ghost btn-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="19" y1="12" x2="5" y2="12"/>
+              <polyline points="12 19 5 12 12 5"/>
+            </svg>
+          </a>
+          <h1>Export Report</h1>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-secondary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="6" y="4" width="4" height="16"/>
+              <rect x="14" y="4" width="4" height="16"/>
+            </svg>
+            Print
+          </button>
+          <button class="btn btn-primary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Download PDF
+          </button>
+          <div class="avatar">JD</div>
+        </div>
+      </header>
+
+      <main class="main-content">
+        <div class="export-container">
+          <!-- Preview Panel -->
+          <div class="preview-panel">
+            <div class="preview-header">
+              <span style="font-weight: 500;">Preview</span>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn btn-ghost btn-sm">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 18 9 12 15 6"/>
+                  </svg>
+                </button>
+                <span style="font-size: 14px; color: var(--text-secondary);">Page 1 of 3</span>
+                <button class="btn btn-ghost btn-sm">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div class="preview-content">
+              <div class="pdf-preview">
+                <div class="pdf-header">
+                  <div class="pdf-logo">AssessHub</div>
+                  <div class="pdf-title">Cloud Infrastructure Review</div>
+                  <div class="pdf-subtitle">Maturity Assessment Report</div>
+                </div>
+
+                <div class="pdf-meta">
+                  <div class="pdf-meta-item">
+                    <div class="pdf-meta-label">Customer</div>
+                    <div class="pdf-meta-value">Acme Corp</div>
+                  </div>
+                  <div class="pdf-meta-item">
+                    <div class="pdf-meta-label">Assessment Type</div>
+                    <div class="pdf-meta-value">Cloud Maturity Model</div>
+                  </div>
+                  <div class="pdf-meta-item">
+                    <div class="pdf-meta-label">Date</div>
+                    <div class="pdf-meta-value">January 15, 2024</div>
+                  </div>
+                </div>
+
+                <div class="pdf-score-section">
+                  <div class="pdf-score-value">3.8</div>
+                  <div class="pdf-score-label">Defined Level</div>
+                  <div class="pdf-score-desc">Standardized processes with room for optimization</div>
+                </div>
+
+                <div class="pdf-section-title">Category Overview</div>
+                <div class="pdf-chart-placeholder">
+                  [Radar Chart - Category Scores]
+                </div>
+
+                <div class="pdf-section-title">Score Breakdown</div>
+                <div class="pdf-category-row">
+                  <div class="pdf-category-name">Infrastructure</div>
+                  <div class="pdf-category-bar">
+                    <div class="pdf-category-fill" style="width: 70%; background: #eab308;"></div>
+                  </div>
+                  <div class="pdf-category-score">3.5</div>
+                </div>
+                <div class="pdf-category-row">
+                  <div class="pdf-category-name">Security</div>
+                  <div class="pdf-category-bar">
+                    <div class="pdf-category-fill" style="width: 80%; background: #84cc16;"></div>
+                  </div>
+                  <div class="pdf-category-score">4.0</div>
+                </div>
+                <div class="pdf-category-row">
+                  <div class="pdf-category-name">Operations</div>
+                  <div class="pdf-category-bar">
+                    <div class="pdf-category-fill" style="width: 50%; background: #f97316;"></div>
+                  </div>
+                  <div class="pdf-category-score">2.5</div>
+                </div>
+                <div class="pdf-category-row">
+                  <div class="pdf-category-name">Governance</div>
+                  <div class="pdf-category-bar">
+                    <div class="pdf-category-fill" style="width: 70%; background: #eab308;"></div>
+                  </div>
+                  <div class="pdf-category-score">3.5</div>
+                </div>
+                <div class="pdf-category-row">
+                  <div class="pdf-category-name">Cost Management</div>
+                  <div class="pdf-category-bar">
+                    <div class="pdf-category-fill" style="width: 44%; background: #f97316;"></div>
+                  </div>
+                  <div class="pdf-category-score">2.2</div>
+                </div>
+
+                <div class="pdf-footer">
+                  Generated by AssessHub on January 15, 2024 | Confidential
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Options Panel -->
+          <div class="options-panel">
+            <div class="options-section">
+              <div class="options-title">Export Format</div>
+              <div class="format-options">
+                <div class="format-option selected">
+                  <svg class="format-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                    <polyline points="10 9 9 9 8 9"/>
+                  </svg>
+                  <div class="format-label">PDF</div>
+                </div>
+                <div class="format-option">
+                  <svg class="format-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="8" y1="13" x2="16" y2="13"/>
+                    <line x1="8" y1="17" x2="16" y2="17"/>
+                  </svg>
+                  <div class="format-label">Excel</div>
+                </div>
+                <div class="format-option">
+                  <svg class="format-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <line x1="3" y1="9" x2="21" y2="9"/>
+                    <line x1="9" y1="21" x2="9" y2="9"/>
+                  </svg>
+                  <div class="format-label">PowerPoint</div>
+                </div>
+                <div class="format-option">
+                  <svg class="format-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                  </svg>
+                  <div class="format-label">PNG</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="options-section">
+              <div class="options-title">Include in Report</div>
+              <div class="option-item">
+                <input type="checkbox" class="option-checkbox" checked>
+                <span class="option-label">Executive Summary</span>
+              </div>
+              <div class="option-item">
+                <input type="checkbox" class="option-checkbox" checked>
+                <span class="option-label">Radar Chart</span>
+              </div>
+              <div class="option-item">
+                <input type="checkbox" class="option-checkbox" checked>
+                <span class="option-label">Heatmap</span>
+              </div>
+              <div class="option-item">
+                <input type="checkbox" class="option-checkbox" checked>
+                <span class="option-label">Category Breakdown</span>
+              </div>
+              <div class="option-item">
+                <input type="checkbox" class="option-checkbox" checked>
+                <span class="option-label">Question Details</span>
+              </div>
+              <div class="option-item">
+                <input type="checkbox" class="option-checkbox" checked>
+                <span class="option-label">Commentary Notes</span>
+              </div>
+              <div class="option-item">
+                <input type="checkbox" class="option-checkbox" checked>
+                <span class="option-label">Recommendations</span>
+              </div>
+            </div>
+
+            <div class="options-section">
+              <div class="options-title">Share Link</div>
+              <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">
+                Generate a shareable link for this report
+              </p>
+              <div class="share-section">
+                <div class="share-link">
+                  <input type="text" value="https://assess.hub/r/a1b2c3d4" readonly>
+                  <button class="btn btn-secondary btn-sm">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                      <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                    </svg>
+                  </button>
+                </div>
+                <div style="margin-top: 12px;">
+                  <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+                    <input type="checkbox">
+                    Require password
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div class="options-section" style="padding-top: 16px; border-top: 1px solid var(--border);">
+              <button class="btn btn-primary" style="width: 100%;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Download Report
+              </button>
+              <button class="btn btn-secondary" style="width: 100%; margin-top: 8px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                  <polyline points="22,6 12,13 2,6"/>
+                </svg>
+                Email Report
+              </button>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('collapsed');
+    }
+
+    // Format option selection
+    document.querySelectorAll('.format-option').forEach(option => {
+      option.addEventListener('click', () => {
+        document.querySelectorAll('.format-option').forEach(o => o.classList.remove('selected'));
+        option.classList.add('selected');
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Assessment Types - Assessment Platform</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .type-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      transition: all 0.15s ease;
+    }
+    .type-card:hover {
+      border-color: var(--primary-color);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    .type-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+    .type-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+    .type-name {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .type-description {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+    .type-stats {
+      display: flex;
+      gap: 24px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+    .type-stat {
+      text-align: center;
+    }
+    .type-stat-value {
+      font-size: 20px;
+      font-weight: 600;
+    }
+    .type-stat-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    .type-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    .types-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 20px;
+    }
+    .create-type-card {
+      background: var(--background);
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      padding: 40px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-decoration: none;
+      color: var(--text-secondary);
+    }
+    .create-type-card:hover {
+      border-color: var(--primary-color);
+      background: #f0f7ff;
+      color: var(--primary-color);
+    }
+    .create-type-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      transition: all 0.15s ease;
+    }
+    .create-type-card:hover .create-type-icon {
+      background: var(--primary-color);
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+            <path d="M2 17l10 5 10-5"/>
+            <path d="M2 12l10 5 10-5"/>
+          </svg>
+          <span>AssessHub</span>
+        </div>
+        <button class="sidebar-toggle" onclick="toggleSidebar()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
+          </svg>
+        </button>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-title">Main</div>
+          <a href="index.html" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            <span>Dashboard</span>
+          </a>
+          <a href="assessment-list.html" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 11H3v10h6V11z"/>
+              <path d="M21 3h-6v18h6V3z"/>
+              <path d="M15 8H9v13h6V8z"/>
+            </svg>
+            <span>Assessments</span>
+          </a>
+          <a href="results.html" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="20" x2="18" y2="10"/>
+              <line x1="12" y1="20" x2="12" y2="4"/>
+              <line x1="6" y1="20" x2="6" y2="14"/>
+            </svg>
+            <span>Reports</span>
+          </a>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-title">Administration</div>
+          <a href="admin-types.html" class="nav-item active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="12" y1="18" x2="12" y2="12"/>
+              <line x1="9" y1="15" x2="15" y2="15"/>
+            </svg>
+            <span>Assessment Types</span>
+          </a>
+          <a href="admin-questions.html" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <span>Questions</span>
+          </a>
+          <a href="admin-csv.html" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <span>Import CSV</span>
+          </a>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="main-wrapper">
+      <header class="main-header">
+        <h1>Assessment Types</h1>
+        <div class="header-actions">
+          <button class="btn btn-primary" onclick="openModal()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Create Type
+          </button>
+          <div class="avatar">JD</div>
+        </div>
+      </header>
+
+      <main class="main-content">
+        <div class="types-grid">
+          <!-- Cloud Maturity -->
+          <div class="type-card">
+            <div class="type-card-header">
+              <div class="type-icon" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z"/>
+                </svg>
+              </div>
+              <span class="badge badge-success">Active</span>
+            </div>
+            <div class="type-name">Cloud Maturity Model</div>
+            <div class="type-description">Assess cloud infrastructure maturity across infrastructure, security, operations, governance, and cost management dimensions.</div>
+            <div class="type-stats">
+              <div class="type-stat">
+                <div class="type-stat-value">5</div>
+                <div class="type-stat-label">Categories</div>
+              </div>
+              <div class="type-stat">
+                <div class="type-stat-value">20</div>
+                <div class="type-stat-label">Questions</div>
+              </div>
+              <div class="type-stat">
+                <div class="type-stat-value">32</div>
+                <div class="type-stat-label">Assessments</div>
+              </div>
+            </div>
+            <div class="type-actions">
+              <a href="admin-questions.html" class="btn btn-secondary btn-sm" style="flex: 1;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+                Edit
+              </a>
+              <button class="btn btn-secondary btn-sm" style="flex: 1;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                  <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                </svg>
+                Duplicate
+              </button>
+            </div>
+          </div>
+
+          <!-- DevOps Maturity -->
+          <div class="type-card">
+            <div class="type-card-header">
+              <div class="type-icon" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9);">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                  <path d="M2 17l10 5 10-5"/>
+                  <path d="M2 12l10 5 10-5"/>
+                </svg>
+              </div>
+              <span class="badge badge-success">Active</span>
+            </div>
+            <div class="type-name">DevOps Maturity</div>
+            <div class="type-description">Evaluate DevOps practices including CI/CD, automation, collaboration, monitoring, and continuous improvement.</div>
+            <div class="type-stats">
+              <div class="type-stat">
+                <div class="type-stat-value">6</div>
+                <div class="type-stat-label">Categories</div>
+              </div>
+              <div class="type-stat">
+                <div class="type-stat-value">24</div>
+                <div class="type-stat-label">Questions</div>
+              </div>
+              <div class="type-stat">
+                <div class="type-stat-value">18</div>
+                <div class="type-stat-label">Assessments</div>
+              </div>
+            </div>
+            <div class="type-actions">
+              <a href="admin-questions.html" class="btn btn-secondary btn-sm" style="flex: 1;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+                Edit
+              </a>
+              <button class="btn btn-secondary btn-sm" style="flex: 1;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                  <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                </svg>
+                Duplicate
+              </button>
+            </div>
+          </div>
+
+          <!-- Security Maturity -->
+          <div class="type-card">
+            <div class="type-card-header">
+              <div class="type-icon" style="background: linear-gradient(135deg, #ef4444, #b91c1c);">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+              </div>
+              <span class="badge badge-success">Active</span>
+            </div>
+            <div class="type-name">Security Maturity</div>
+            <div class="type-description">Comprehensive security posture assessment covering identity, data protection, network security, and compliance.</div>
+            <div class="type-stats">
+              <div class="type-stat">
+                <div class="type-stat-value">7</div>
+                <div class="type-stat-label">Categories</div>
+              </div>
+              <div class="type-stat">
+                <div class="type-stat-value">28</div>
+                <div class="type-stat-label">Questions</div>
+              </div>
+              <div class="type-stat">
+                <div class="type-stat-value">15</div>
+                <div class="type-stat-label">Assessments</div>
+              </div>
+            </div>
+            <div class="type-actions">
+              <a href="admin-questions.html" class="btn btn-secondary btn-sm" style="flex: 1;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+                Edit
+              </a>
+              <button class="btn btn-secondary btn-sm" style="flex: 1;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                  <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                </svg>
+                Duplicate
+              </button>
+            </div>
+          </div>
+
+          <!-- Data Maturity -->
+          <div class="type-card">
+            <div class="type-card-header">
+              <div class="type-icon" style="background: linear-gradient(135deg, #10b981, #047857);">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                  <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                  <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                </svg>
+              </div>
+              <span class="badge badge-draft">Draft</span>
+            </div>
+            <div class="type-name">Data Platform Maturity</div>
+            <div class="type-description">Assess data platform capabilities including data governance, quality, analytics, and machine learning readiness.</div>
+            <div class="type-stats">
+              <div class="type-stat">
+                <div class="type-stat-value">5</div>
+                <div class="type-stat-label">Categories</div>
+              </div>
+              <div class="type-stat">
+                <div class="type-stat-value">18</div>
+                <div class="type-stat-label">Questions</div>
+              </div>
+              <div class="type-stat">
+                <div class="type-stat-value">0</div>
+                <div class="type-stat-label">Assessments</div>
+              </div>
+            </div>
+            <div class="type-actions">
+              <a href="admin-questions.html" class="btn btn-secondary btn-sm" style="flex: 1;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+                Edit
+              </a>
+              <button class="btn btn-secondary btn-sm" style="flex: 1;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                  <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                </svg>
+                Duplicate
+              </button>
+            </div>
+          </div>
+
+          <!-- Create New Card -->
+          <a href="#" class="create-type-card" onclick="openModal(); return false;">
+            <div class="create-type-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </div>
+            <div style="font-size: 16px; font-weight: 500;">Create New Assessment Type</div>
+            <div style="font-size: 14px; margin-top: 4px;">Start from scratch or import from CSV</div>
+          </a>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Create Type Modal -->
+  <div class="modal-overlay" id="createModal" style="display: none;">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title">Create Assessment Type</h2>
+        <button class="btn btn-ghost btn-icon" onclick="closeModal()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Name *</label>
+          <input type="text" class="form-input" placeholder="e.g., Cloud Maturity Model">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea class="form-input" placeholder="Describe the purpose and scope of this assessment type..."></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Version</label>
+          <input type="text" class="form-input" placeholder="1.0" value="1.0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Icon Color</label>
+          <div style="display: flex; gap: 8px; margin-top: 8px;">
+            <button class="btn btn-icon" style="background: #3b82f6; width: 36px; height: 36px; border-radius: 8px;"></button>
+            <button class="btn btn-icon" style="background: #8b5cf6; width: 36px; height: 36px; border-radius: 8px;"></button>
+            <button class="btn btn-icon" style="background: #ef4444; width: 36px; height: 36px; border-radius: 8px;"></button>
+            <button class="btn btn-icon" style="background: #10b981; width: 36px; height: 36px; border-radius: 8px;"></button>
+            <button class="btn btn-icon" style="background: #f59e0b; width: 36px; height: 36px; border-radius: 8px;"></button>
+            <button class="btn btn-icon" style="background: #6366f1; width: 36px; height: 36px; border-radius: 8px;"></button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <a href="admin-questions.html" class="btn btn-primary">Create & Add Questions</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('collapsed');
+    }
+
+    function openModal() {
+      document.getElementById('createModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('createModal').style.display = 'none';
+    }
+
+    // Close modal on backdrop click
+    document.getElementById('createModal').addEventListener('click', function(e) {
+      if (e.target === this) closeModal();
+    });
+  </script>
+</body>
+</html>

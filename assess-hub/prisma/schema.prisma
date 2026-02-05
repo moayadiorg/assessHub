@@ -1,0 +1,134 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Assessment Template - defines the structure of an assessment type
+model AssessmentType {
+  id          String       @id @default(cuid())
+  name        String       // e.g., "Cloud Maturity Model", "DevOps Maturity"
+  description String?
+  version     String       @default("1.0")
+  iconColor   String       @default("#3b82f6")
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  categories  Category[]
+  assessments Assessment[]
+}
+
+// Category within an assessment type
+model Category {
+  id               String         @id @default(cuid())
+  assessmentTypeId String
+  assessmentType   AssessmentType @relation(fields: [assessmentTypeId], references: [id], onDelete: Cascade)
+  name             String
+  description      String?
+  order            Int
+  questions        Question[]
+}
+
+// Question within a category
+model Question {
+  id          String           @id @default(cuid())
+  categoryId  String
+  category    Category         @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  text        String
+  description String?
+  order       Int
+  options     QuestionOption[]
+  responses   Response[]
+}
+
+// Maturity level option (1-5) for each question
+model QuestionOption {
+  id          String   @id @default(cuid())
+  questionId  String
+  question    Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  score       Int      // 1-5
+  label       String   // e.g., "Initial", "Managed", "Defined", "Quantitatively Managed", "Optimizing"
+  description String   // What this level means for this question
+}
+
+// A specific assessment instance (customer engagement)
+model Assessment {
+  id               String         @id @default(cuid())
+  name             String
+  customerName     String
+  assessmentTypeId String
+  assessmentType   AssessmentType @relation(fields: [assessmentTypeId], references: [id])
+  createdBy        String
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  status           String         @default("draft") // draft, in-progress, completed
+  responses        Response[]
+}
+
+// User's response to a question
+model Response {
+  id           String     @id @default(cuid())
+  assessmentId String
+  assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  questionId   String
+  question     Question   @relation(fields: [questionId], references: [id])
+  score        Int        // 1-5
+  commentary   String?    // Free text notes
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([assessmentId, questionId])
+}
+
+// User accounts (for NextAuth.js)
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  role          String    @default("user") // admin, user, viewer
+  accounts      Account[]
+  sessions      Session[]
+}
+
+// NextAuth.js required models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}

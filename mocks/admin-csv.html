@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Import CSV - Assessment Platform</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .import-container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .upload-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      margin-bottom: 24px;
+    }
+    .dropzone-large {
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      padding: 64px 32px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      background: var(--background);
+    }
+    .dropzone-large:hover, .dropzone-large.dragover {
+      border-color: var(--primary-color);
+      background: #f0f7ff;
+    }
+    .dropzone-large.has-file {
+      border-color: var(--success);
+      background: #f0fdf4;
+    }
+    .dropzone-icon {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 20px;
+      color: var(--text-secondary);
+    }
+    .dropzone-large.has-file .dropzone-icon {
+      color: var(--success);
+    }
+    .dropzone-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .dropzone-subtitle {
+      color: var(--text-secondary);
+      margin-bottom: 20px;
+    }
+    .file-info {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 16px;
+      background: white;
+      border-radius: 8px;
+      margin-top: 20px;
+    }
+    .file-icon {
+      width: 40px;
+      height: 40px;
+      background: #e6f0ff;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary-color);
+    }
+    .file-details {
+      text-align: left;
+    }
+    .file-name {
+      font-weight: 500;
+    }
+    .file-size {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+    .format-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    .format-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .code-block {
+      background: #1a1a1a;
+      color: #f0f0f0;
+      padding: 16px;
+      border-radius: 8px;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 13px;
+      overflow-x: auto;
+      line-height: 1.6;
+    }
+    .code-comment {
+      color: #6b7280;
+    }
+    .code-header {
+      color: #60a5fa;
+    }
+    .code-value {
+      color: #a5f3fc;
+    }
+    .preview-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    .preview-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .preview-stats {
+      display: flex;
+      gap: 24px;
+    }
+    .preview-stat {
+      text-align: center;
+    }
+    .preview-stat-value {
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--primary-color);
+    }
+    .preview-stat-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+    .preview-table {
+      max-height: 400px;
+      overflow-y: auto;
+      margin-top: 16px;
+    }
+    .preview-table table {
+      font-size: 13px;
+    }
+    .validation-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    .validation-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .validation-item:last-child {
+      border-bottom: none;
+    }
+    .validation-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .validation-icon.success {
+      background: #d1fae5;
+      color: #065f46;
+    }
+    .validation-icon.error {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    .validation-icon.warning {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    .validation-content h4 {
+      font-size: 14px;
+      margin-bottom: 2px;
+    }
+    .validation-content p {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+    .import-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      margin-top: 24px;
+    }
+    .steps-indicator {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 32px;
+    }
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+    .step.active {
+      background: var(--primary-color);
+      color: white;
+    }
+    .step.completed {
+      background: #d1fae5;
+      color: #065f46;
+    }
+    .step-number {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: currentColor;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .step.active .step-number,
+    .step.completed .step-number {
+      background: rgba(255,255,255,0.2);
+      color: inherit;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+            <path d="M2 17l10 5 10-5"/>
+            <path d="M2 12l10 5 10-5"/>
+          </svg>
+          <span>AssessHub</span>
+        </div>
+        <button class="sidebar-toggle" onclick="toggleSidebar()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
+          </svg>
+        </button>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-title">Main</div>
+          <a href="index.html" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            <span>Dashboard</span>
+          </a>
+          <a href="assessment-list.html" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 11H3v10h6V11z"/>
+              <path d="M21 3h-6v18h6V3z"/>
+              <path d="M15 8H9v13h6V8z"/>
+            </svg>
+            <span>Assessments</span>
+          </a>
+          <a href="results.html" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="20" x2="18" y2="10"/>
+              <line x1="12" y1="20" x2="12" y2="4"/>
+              <line x1="6" y1="20" x2="6" y2="14"/>
+            </svg>
+            <span>Reports</span>
+          </a>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-title">Administration</div>
+          <a href="admin-types.html" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="12" y1="18" x2="12" y2="12"/>
+              <line x1="9" y1="15" x2="15" y2="15"/>
+            </svg>
+            <span>Assessment Types</span>
+          </a>
+          <a href="admin-questions.html" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <span>Questions</span>
+          </a>
+          <a href="admin-csv.html" class="nav-item active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <span>Import CSV</span>
+          </a>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="main-wrapper">
+      <header class="main-header">
+        <h1>Import Assessment from CSV</h1>
+        <div class="header-actions">
+          <div class="avatar">JD</div>
+        </div>
+      </header>
+
+      <main class="main-content">
+        <div class="import-container">
+          <!-- Steps Indicator -->
+          <div class="steps-indicator">
+            <div class="step completed">
+              <span class="step-number">1</span>
+              Upload
+            </div>
+            <div class="step active">
+              <span class="step-number">2</span>
+              Preview
+            </div>
+            <div class="step">
+              <span class="step-number">3</span>
+              Import
+            </div>
+          </div>
+
+          <!-- Upload Section -->
+          <div class="upload-section">
+            <div class="dropzone-large has-file" id="dropzone">
+              <svg class="dropzone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+              <div class="dropzone-title">File uploaded successfully</div>
+              <div class="dropzone-subtitle">Click to replace or drag a new file</div>
+              <input type="file" id="fileInput" accept=".csv" style="display: none;">
+
+              <div class="file-info">
+                <div class="file-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                  </svg>
+                </div>
+                <div class="file-details">
+                  <div class="file-name">cloud-maturity-assessment.csv</div>
+                  <div class="file-size">12.4 KB - 45 rows</div>
+                </div>
+                <button class="btn btn-ghost btn-sm">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Format Documentation -->
+          <div class="format-section">
+            <div class="format-header">
+              <h3 style="font-size: 16px; font-weight: 600;">Expected CSV Format</h3>
+              <button class="btn btn-secondary btn-sm">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Download Template
+              </button>
+            </div>
+            <div class="code-block">
+              <span class="code-comment"># Required columns:</span><br>
+              <span class="code-header">assessment_type,category,category_order,question,question_order,level_1,level_2,level_3,level_4,level_5</span><br><br>
+              <span class="code-comment"># Example row:</span><br>
+              <span class="code-value">Cloud Maturity,Infrastructure,1,How automated is your infrastructure?,1,Manual,Some scripts,IaC templates,Full IaC with CI/CD,Self-service platform</span>
+            </div>
+            <div style="margin-top: 16px; font-size: 14px; color: var(--text-secondary);">
+              <strong>Columns explained:</strong>
+              <ul style="margin-top: 8px; padding-left: 20px; line-height: 1.8;">
+                <li><code>assessment_type</code> - Name of the assessment (creates new if doesn't exist)</li>
+                <li><code>category</code> - Category name within the assessment</li>
+                <li><code>category_order</code> - Display order of the category (1, 2, 3...)</li>
+                <li><code>question</code> - The question text</li>
+                <li><code>question_order</code> - Display order within category</li>
+                <li><code>level_1</code> to <code>level_5</code> - Descriptions for each maturity level</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Preview Section -->
+          <div class="preview-section">
+            <div class="preview-header">
+              <h3 style="font-size: 16px; font-weight: 600;">Import Preview</h3>
+              <div class="preview-stats">
+                <div class="preview-stat">
+                  <div class="preview-stat-value">1</div>
+                  <div class="preview-stat-label">Assessment Type</div>
+                </div>
+                <div class="preview-stat">
+                  <div class="preview-stat-value">5</div>
+                  <div class="preview-stat-label">Categories</div>
+                </div>
+                <div class="preview-stat">
+                  <div class="preview-stat-value">20</div>
+                  <div class="preview-stat-label">Questions</div>
+                </div>
+              </div>
+            </div>
+            <div class="preview-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Category</th>
+                    <th>Question</th>
+                    <th>Level 1</th>
+                    <th>Level 5</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="badge badge-info">Infrastructure</span></td>
+                    <td>How automated is your infrastructure provisioning?</td>
+                    <td>Manual provisioning</td>
+                    <td>Self-service platform</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge badge-info">Infrastructure</span></td>
+                    <td>How do you manage infrastructure state?</td>
+                    <td>No tracking</td>
+                    <td>GitOps with drift detection</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge badge-info">Infrastructure</span></td>
+                    <td>How are networking and connectivity managed?</td>
+                    <td>Default VPC, public IPs</td>
+                    <td>Zero-trust with service mesh</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge badge-info">Infrastructure</span></td>
+                    <td>What is your approach to disaster recovery?</td>
+                    <td>Single region, no DR</td>
+                    <td>Active-active multi-region</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge badge-success">Security</span></td>
+                    <td>How are secrets managed?</td>
+                    <td>Hardcoded in code</td>
+                    <td>Zero-trust dynamic secrets</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge badge-success">Security</span></td>
+                    <td>What is your IAM strategy?</td>
+                    <td>Shared credentials</td>
+                    <td>Just-in-time access with MFA</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge badge-success">Security</span></td>
+                    <td>How is data encrypted?</td>
+                    <td>No encryption</td>
+                    <td>Customer-managed keys, auto-rotation</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge badge-warning">Operations</span></td>
+                    <td>How comprehensive is your monitoring?</td>
+                    <td>Basic uptime checks</td>
+                    <td>Full observability platform</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge badge-warning">Operations</span></td>
+                    <td>How are incidents managed?</td>
+                    <td>Ad-hoc response</td>
+                    <td>Automated runbooks</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge badge-draft">Governance</span></td>
+                    <td>How are cloud resources tagged?</td>
+                    <td>No tagging strategy</td>
+                    <td>Automated enforcement</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Validation Section -->
+          <div class="validation-section">
+            <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 16px;">Validation Results</h3>
+            <div class="validation-item">
+              <div class="validation-icon success">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              </div>
+              <div class="validation-content">
+                <h4>All required columns present</h4>
+                <p>Found all 10 required columns in the CSV file</p>
+              </div>
+            </div>
+            <div class="validation-item">
+              <div class="validation-icon success">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              </div>
+              <div class="validation-content">
+                <h4>No duplicate questions</h4>
+                <p>All 20 questions are unique within their categories</p>
+              </div>
+            </div>
+            <div class="validation-item">
+              <div class="validation-icon success">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              </div>
+              <div class="validation-content">
+                <h4>Category ordering is valid</h4>
+                <p>Categories have sequential order numbers</p>
+              </div>
+            </div>
+            <div class="validation-item">
+              <div class="validation-icon warning">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                  <line x1="12" y1="9" x2="12" y2="13"/>
+                  <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+              </div>
+              <div class="validation-content">
+                <h4>Assessment type already exists</h4>
+                <p>"Cloud Maturity" already exists. New questions will be added to the existing type.</p>
+              </div>
+            </div>
+
+            <div class="import-actions">
+              <button class="btn btn-secondary">Cancel</button>
+              <button class="btn btn-primary">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                Import 20 Questions
+              </button>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('collapsed');
+    }
+
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('fileInput');
+
+    dropzone.addEventListener('click', () => fileInput.click());
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.classList.add('dragover');
+    });
+    dropzone.addEventListener('dragleave', () => {
+      dropzone.classList.remove('dragover');
+    });
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      // Handle file drop
+    });
+  </script>
+</body>
+</html>

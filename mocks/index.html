@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - Assessment Platform</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+            <path d="M2 17l10 5 10-5"/>
+            <path d="M2 12l10 5 10-5"/>
+          </svg>
+          <span>AssessHub</span>
+        </div>
+        <button class="sidebar-toggle" onclick="toggleSidebar()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
+          </svg>
+        </button>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-title">Main</div>
+          <a href="index.html" class="nav-item active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            <span>Dashboard</span>
+          </a>
+          <a href="assessment-list.html" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 11H3v10h6V11z"/>
+              <path d="M21 3h-6v18h6V3z"/>
+              <path d="M15 8H9v13h6V8z"/>
+            </svg>
+            <span>Assessments</span>
+          </a>
+          <a href="results.html" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="20" x2="18" y2="10"/>
+              <line x1="12" y1="20" x2="12" y2="4"/>
+              <line x1="6" y1="20" x2="6" y2="14"/>
+            </svg>
+            <span>Reports</span>
+          </a>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-title">Administration</div>
+          <a href="admin-types.html" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="12" y1="18" x2="12" y2="12"/>
+              <line x1="9" y1="15" x2="15" y2="15"/>
+            </svg>
+            <span>Assessment Types</span>
+          </a>
+          <a href="admin-questions.html" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <span>Questions</span>
+          </a>
+          <a href="admin-csv.html" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <span>Import CSV</span>
+          </a>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-title">Settings</div>
+          <a href="#" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+            </svg>
+            <span>Settings</span>
+          </a>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="main-wrapper">
+      <header class="main-header">
+        <h1>Dashboard</h1>
+        <div class="header-actions">
+          <a href="assessment-form.html" class="btn btn-primary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            New Assessment
+          </a>
+          <div class="avatar">JD</div>
+        </div>
+      </header>
+
+      <main class="main-content">
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Total Assessments</div>
+            <div class="stat-value">47</div>
+            <div class="stat-change positive">+12% from last month</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Completed</div>
+            <div class="stat-value">32</div>
+            <div class="stat-change positive">+8% from last month</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">In Progress</div>
+            <div class="stat-value">11</div>
+            <div class="stat-change">Same as last month</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Avg. Maturity Score</div>
+            <div class="stat-value">3.2</div>
+            <div class="stat-change positive">+0.3 improvement</div>
+          </div>
+        </div>
+
+        <!-- Recent Assessments -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Recent Assessments</h2>
+            <a href="assessment-list.html" class="btn btn-ghost btn-sm">View All</a>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Assessment</th>
+                  <th>Customer</th>
+                  <th>Type</th>
+                  <th>Status</th>
+                  <th>Score</th>
+                  <th>Last Updated</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Cloud Infrastructure Review</strong></td>
+                  <td>Acme Corp</td>
+                  <td>Cloud Maturity</td>
+                  <td><span class="badge badge-success">Completed</span></td>
+                  <td>3.8</td>
+                  <td>2 hours ago</td>
+                  <td>
+                    <button class="btn btn-ghost btn-icon">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="1"/>
+                        <circle cx="19" cy="12" r="1"/>
+                        <circle cx="5" cy="12" r="1"/>
+                      </svg>
+                    </button>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>DevOps Assessment Q1</strong></td>
+                  <td>TechStart Inc</td>
+                  <td>DevOps Maturity</td>
+                  <td><span class="badge badge-warning">In Progress</span></td>
+                  <td>2.4</td>
+                  <td>1 day ago</td>
+                  <td>
+                    <button class="btn btn-ghost btn-icon">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="1"/>
+                        <circle cx="19" cy="12" r="1"/>
+                        <circle cx="5" cy="12" r="1"/>
+                      </svg>
+                    </button>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Security Posture Analysis</strong></td>
+                  <td>GlobalBank</td>
+                  <td>Security Maturity</td>
+                  <td><span class="badge badge-success">Completed</span></td>
+                  <td>4.1</td>
+                  <td>3 days ago</td>
+                  <td>
+                    <button class="btn btn-ghost btn-icon">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="1"/>
+                        <circle cx="19" cy="12" r="1"/>
+                        <circle cx="5" cy="12" r="1"/>
+                      </svg>
+                    </button>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Data Platform Review</strong></td>
+                  <td>DataFlow Ltd</td>
+                  <td>Data Maturity</td>
+                  <td><span class="badge badge-draft">Draft</span></td>
+                  <td>-</td>
+                  <td>5 days ago</td>
+                  <td>
+                    <button class="btn btn-ghost btn-icon">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="1"/>
+                        <circle cx="19" cy="12" r="1"/>
+                        <circle cx="5" cy="12" r="1"/>
+                      </svg>
+                    </button>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Kubernetes Readiness</strong></td>
+                  <td>CloudNative Co</td>
+                  <td>Cloud Maturity</td>
+                  <td><span class="badge badge-warning">In Progress</span></td>
+                  <td>3.0</td>
+                  <td>1 week ago</td>
+                  <td>
+                    <button class="btn btn-ghost btn-icon">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="1"/>
+                        <circle cx="19" cy="12" r="1"/>
+                        <circle cx="5" cy="12" r="1"/>
+                      </svg>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Quick Actions & Activity -->
+        <div class="grid-2 mt-6">
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Quick Actions</h2>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <a href="assessment-form.html" class="btn btn-secondary" style="justify-content: flex-start;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Start New Assessment
+              </a>
+              <a href="admin-csv.html" class="btn btn-secondary" style="justify-content: flex-start;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                Import Assessment Template
+              </a>
+              <a href="admin-types.html" class="btn btn-secondary" style="justify-content: flex-start;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                </svg>
+                Create Assessment Type
+              </a>
+              <a href="export.html" class="btn btn-secondary" style="justify-content: flex-start;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Export Reports
+              </a>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Recent Activity</h2>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+              <div style="display: flex; gap: 12px; align-items: flex-start;">
+                <div class="avatar" style="background: #10b981;">JD</div>
+                <div>
+                  <div style="font-weight: 500;">Completed Cloud Infrastructure Review</div>
+                  <div class="text-secondary" style="font-size: 13px;">Acme Corp - 2 hours ago</div>
+                </div>
+              </div>
+              <div style="display: flex; gap: 12px; align-items: flex-start;">
+                <div class="avatar" style="background: #f59e0b;">SM</div>
+                <div>
+                  <div style="font-weight: 500;">Updated DevOps Assessment Q1</div>
+                  <div class="text-secondary" style="font-size: 13px;">TechStart Inc - 1 day ago</div>
+                </div>
+              </div>
+              <div style="display: flex; gap: 12px; align-items: flex-start;">
+                <div class="avatar" style="background: #3b82f6;">AK</div>
+                <div>
+                  <div style="font-weight: 500;">Created new assessment type</div>
+                  <div class="text-secondary" style="font-size: 13px;">Data Platform Maturity - 2 days ago</div>
+                </div>
+              </div>
+              <div style="display: flex; gap: 12px; align-items: flex-start;">
+                <div class="avatar" style="background: #8b5cf6;">LP</div>
+                <div>
+                  <div style="font-weight: 500;">Exported Security Posture Analysis</div>
+                  <div class="text-secondary" style="font-size: 13px;">GlobalBank - 3 days ago</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('collapsed');
+    }
+  </script>
+</body>
+</html>
