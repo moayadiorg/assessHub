@@ -4,6 +4,7 @@ import "@radix-ui/themes/styles.css";
 import "./globals.css";
 import { Theme } from "@radix-ui/themes";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { AuthProvider } from "@/components/auth/AuthProvider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -23,9 +24,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} antialiased`}>
-        <Theme accentColor="blue" grayColor="slate" radius="medium" scaling="100%">
-          <MainLayout>{children}</MainLayout>
-        </Theme>
+        <AuthProvider>
+          <Theme accentColor="blue" grayColor="slate" radius="medium" scaling="100%">
+            <MainLayout>{children}</MainLayout>
+          </Theme>
+        </AuthProvider>
       </body>
     </html>
   );

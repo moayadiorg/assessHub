@@ -1,8 +1,9 @@
 'use client'
 
-import { Box, Flex, Text, Button, Avatar } from '@radix-ui/themes'
+import { Box, Flex, Text, Button } from '@radix-ui/themes'
 import { PlusIcon } from '@radix-ui/react-icons'
 import Link from 'next/link'
+import { SignInButton } from '@/components/auth/SignInButton'
 
 interface HeaderProps {
   title: string
@@ -39,12 +40,7 @@ export function Header({ title, showNewAssessment = true, children }: HeaderProp
                 </Link>
               </Button>
             )}
-            <Avatar
-              size="2"
-              radius="full"
-              fallback="JD"
-              style={{ cursor: 'pointer' }}
-            />
+            <SignInButton />
           </Flex>
         </Flex>
       </header>

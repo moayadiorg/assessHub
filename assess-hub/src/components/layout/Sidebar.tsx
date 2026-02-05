@@ -7,12 +7,11 @@ import {
   HomeIcon,
   BarChartIcon,
   FileTextIcon,
-  GearIcon,
   PlusCircledIcon,
-  QuestionMarkCircledIcon,
   UploadIcon,
   ChevronLeftIcon,
   LayersIcon,
+  PersonIcon,
 } from '@radix-ui/react-icons'
 import { Box, Flex, Text, IconButton, Separator } from '@radix-ui/themes'
 
@@ -30,12 +29,8 @@ const mainNavItems: NavItem[] = [
 
 const adminNavItems: NavItem[] = [
   { href: '/admin/types', label: 'Assessment Types', icon: <PlusCircledIcon width={20} height={20} /> },
-  { href: '/admin/questions', label: 'Questions', icon: <QuestionMarkCircledIcon width={20} height={20} /> },
   { href: '/admin/import', label: 'Import CSV', icon: <UploadIcon width={20} height={20} /> },
-]
-
-const settingsNavItems: NavItem[] = [
-  { href: '/settings', label: 'Settings', icon: <GearIcon width={20} height={20} /> },
+  { href: '/admin/users', label: 'Users', icon: <PersonIcon width={20} height={20} /> },
 ]
 
 export function Sidebar() {
@@ -116,10 +111,6 @@ export function Sidebar() {
           <Separator size="4" my="4" />
 
           <NavSection title="Administration" items={adminNavItems} collapsed={sidebarCollapsed} isActive={isActive} />
-
-          <Separator size="4" my="4" />
-
-          <NavSection title="Settings" items={settingsNavItems} collapsed={sidebarCollapsed} isActive={isActive} />
         </Box>
       </aside>
     </Box>
