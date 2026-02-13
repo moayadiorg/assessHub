@@ -1,5 +1,7 @@
-import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
+import { execute, queryOne } from '@/lib/sql-helpers'
+import { newId } from '@/lib/id'
+import type { Response } from '@/types/db'
 
 export async function POST(request: Request) {
   const body = await request.json()
@@ -19,36 +21,26 @@ export async function POST(request: Request) {
     )
   }
 
-  // Upsert response
-  const response = await prisma.response.upsert({
-    where: {
-      assessmentId_questionId: {
-        assessmentId: body.assessmentId,
-        questionId: body.questionId
-      }
-    },
-    update: {
-      score: body.score,
-      commentary: body.commentary ?? null
-    },
-    create: {
-      assessmentId: body.assessmentId,
-      questionId: body.questionId,
-      score: body.score,
-      commentary: body.commentary ?? null
-    }
-  })
+  // Upsert response using INSERT ... ON DUPLICATE KEY UPDATE
+  const responseId = newId()
+  await execute(
+    `INSERT INTO Response (id, assessmentId, questionId, score, commentary, createdAt, updatedAt)
+     VALUES (?, ?, ?, ?, ?, NOW(3), NOW(3))
+     ON DUPLICATE KEY UPDATE score = VALUES(score), commentary = VALUES(commentary), updatedAt = NOW(3)`,
+    [responseId, body.assessmentId, body.questionId, body.score, body.commentary ?? null]
+  )
 
   // Auto-update assessment status to in-progress if draft
-  await prisma.assessment.updateMany({
-    where: {
-      id: body.assessmentId,
-      status: 'draft'
-    },
-    data: {
-      status: 'in-progress'
-    }
-  })
+  await execute(
+    `UPDATE Assessment SET status = 'in-progress', updatedAt = NOW(3) WHERE id = ? AND status = 'draft'`,
+    [body.assessmentId]
+  )
+
+  // Fetch the upserted response
+  const response = await queryOne<Response>(
+    'SELECT * FROM Response WHERE assessmentId = ? AND questionId = ?',
+    [body.assessmentId, body.questionId]
+  )
 
   return NextResponse.json(response)
 }

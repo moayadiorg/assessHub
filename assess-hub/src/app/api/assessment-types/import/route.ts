@@ -1,4 +1,5 @@
-import { prisma } from '@/lib/prisma'
+import { transaction } from '@/lib/sql-helpers'
+import { newId } from '@/lib/id'
 import { NextResponse } from 'next/server'
 import { parseCSV, transformToImport, generateTemplate, ParsedImport } from '@/lib/csv-parser'
 
@@ -48,52 +49,50 @@ export async function POST(request: Request) {
 }
 
 async function importAssessmentType(data: ParsedImport) {
-  return await prisma.$transaction(async (tx) => {
+  return await transaction(async (conn) => {
     // Create assessment type
-    const assessmentType = await tx.assessmentType.create({
-      data: {
-        name: data.assessmentType,
-        description: `Imported from CSV`,
-        version: '1.0',
-      },
-    })
+    const typeId = newId()
+    await conn.execute(
+      `INSERT INTO AssessmentType
+       (id, name, description, version, iconColor, isActive, createdAt, updatedAt)
+       VALUES (?, ?, ?, ?, ?, 1, NOW(3), NOW(3))`,
+      [typeId, data.assessmentType, 'Imported from CSV', '1.0', '#3b82f6']
+    )
 
     let categoryCount = 0
     let questionCount = 0
 
     // Create categories and questions
     for (const catData of data.categories) {
-      const category = await tx.category.create({
-        data: {
-          assessmentTypeId: assessmentType.id,
-          name: catData.name,
-          order: catData.order,
-        },
-      })
+      const catId = newId()
+      await conn.execute(
+        'INSERT INTO Category (id, assessmentTypeId, name, `order`) VALUES (?, ?, ?, ?)',
+        [catId, typeId, catData.name, catData.order]
+      )
       categoryCount++
 
       for (const qData of catData.questions) {
-        await tx.question.create({
-          data: {
-            categoryId: category.id,
-            text: qData.text,
-            order: qData.order,
-            options: {
-              create: qData.options.map(opt => ({
-                score: opt.score,
-                label: opt.label,
-                description: opt.description,
-              })),
-            },
-          },
-        })
+        const qId = newId()
+        await conn.execute(
+          'INSERT INTO Question (id, categoryId, text, `order`) VALUES (?, ?, ?, ?)',
+          [qId, catId, qData.text, qData.order]
+        )
+
+        // Create options for this question
+        for (const opt of qData.options) {
+          await conn.execute(
+            'INSERT INTO QuestionOption (id, questionId, score, label, description) VALUES (?, ?, ?, ?, ?)',
+            [newId(), qId, opt.score, opt.label, opt.description]
+          )
+        }
+
         questionCount++
       }
     }
 
     return {
-      id: assessmentType.id,
-      name: assessmentType.name,
+      id: typeId,
+      name: data.assessmentType,
       categories: categoryCount,
       questions: questionCount,
     }

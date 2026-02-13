@@ -1,4 +1,5 @@
-import { prisma } from '@/lib/prisma'
+import { query, queryOne, execute } from '@/lib/sql-helpers'
+import { Category, Question } from '@/types/db'
 import { NextResponse } from 'next/server'
 
 export async function GET(
@@ -7,14 +8,10 @@ export async function GET(
 ) {
   const { id } = await params
 
-  const category = await prisma.category.findUnique({
-    where: { id },
-    include: {
-      questions: {
-        orderBy: { order: 'asc' }
-      }
-    }
-  })
+  const category = await queryOne<Category>(
+    'SELECT id, assessmentTypeId, name, description, `order` FROM Category WHERE id = ?',
+    [id]
+  )
 
   if (!category) {
     return NextResponse.json(
@@ -23,7 +20,12 @@ export async function GET(
     )
   }
 
-  return NextResponse.json(category)
+  const questions = await query<Question>(
+    'SELECT id, categoryId, text, description, `order` FROM Question WHERE categoryId = ? ORDER BY `order` ASC',
+    [id]
+  )
+
+  return NextResponse.json({ ...category, questions })
 }
 
 export async function PUT(
@@ -33,9 +35,10 @@ export async function PUT(
   const { id } = await params
   const body = await request.json()
 
-  const existing = await prisma.category.findUnique({
-    where: { id }
-  })
+  const existing = await queryOne<Category>(
+    'SELECT id, assessmentTypeId, name, description, `order` FROM Category WHERE id = ?',
+    [id]
+  )
 
   if (!existing) {
     return NextResponse.json(
@@ -44,16 +47,24 @@ export async function PUT(
     )
   }
 
-  const updated = await prisma.category.update({
-    where: { id },
-    data: {
-      name: body.name?.trim() ?? existing.name,
-      description: body.description !== undefined
-        ? body.description?.trim() || null
-        : existing.description,
-      order: body.order ?? existing.order,
-    }
-  })
+  const name = body.name?.trim() ?? existing.name
+  const description = body.description !== undefined
+    ? body.description?.trim() || null
+    : existing.description
+  const order = body.order ?? existing.order
+
+  await execute(
+    'UPDATE Category SET name = ?, description = ?, `order` = ? WHERE id = ?',
+    [name, description, order, id]
+  )
+
+  const updated = {
+    id: existing.id,
+    assessmentTypeId: existing.assessmentTypeId,
+    name,
+    description,
+    order
+  }
 
   return NextResponse.json(updated)
 }
@@ -64,9 +75,10 @@ export async function DELETE(
 ) {
   const { id } = await params
 
-  const existing = await prisma.category.findUnique({
-    where: { id }
-  })
+  const existing = await queryOne<Category>(
+    'SELECT id FROM Category WHERE id = ?',
+    [id]
+  )
 
   if (!existing) {
     return NextResponse.json(
@@ -76,9 +88,7 @@ export async function DELETE(
   }
 
   // Cascade delete will remove all questions and their options
-  await prisma.category.delete({
-    where: { id }
-  })
+  await execute('DELETE FROM Category WHERE id = ?', [id])
 
   return NextResponse.json({ success: true })
 }

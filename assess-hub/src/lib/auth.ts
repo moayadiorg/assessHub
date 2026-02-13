@@ -1,9 +1,10 @@
 import { NextAuthOptions } from 'next-auth'
-import { PrismaAdapter } from '@auth/prisma-adapter'
+import { MysqlAdapter } from './mysql-adapter'
 import GitHubProvider from 'next-auth/providers/github'
 import GoogleProvider from 'next-auth/providers/google'
 import CredentialsProvider from 'next-auth/providers/credentials'
-import { prisma } from './prisma'
+import { queryOne, execute } from './sql-helpers'
+import type { DbUser } from '@/types/db'
 
 // Build providers array conditionally based on available env vars
 const providers: NextAuthOptions['providers'] = []
@@ -45,19 +46,20 @@ if (process.env.NODE_ENV === 'development') {
         if (!credentials?.email) return null
 
         // Look up existing user - don't auto-create
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-        })
+        const user = await queryOne<DbUser>(
+          'SELECT * FROM User WHERE email = ?',
+          [credentials.email]
+        )
 
         // User must be pre-authorized and active
         if (!user) return null
         if (!user.isActive) return null
 
         // Update last login
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { lastLoginAt: new Date() },
-        })
+        await execute(
+          'UPDATE User SET lastLoginAt = NOW(3) WHERE id = ?',
+          [user.id]
+        )
 
         return {
           id: user.id,
@@ -71,7 +73,7 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma) as any,
+  adapter: MysqlAdapter() as any,
   providers,
   callbacks: {
     async signIn({ user, account, profile }) {
@@ -81,9 +83,10 @@ export const authOptions: NextAuthOptions = {
       const email = (user.email || (profile as any)?.email)?.toLowerCase()
       if (!email) return false
 
-      const existingUser = await prisma.user.findUnique({
-        where: { email },
-      })
+      const existingUser = await queryOne<DbUser>(
+        'SELECT * FROM User WHERE email = ?',
+        [email]
+      )
 
       if (!existingUser) {
         return '/auth/error?error=NotAuthorized'
@@ -93,10 +96,10 @@ export const authOptions: NextAuthOptions = {
       }
 
       // Update last login
-      await prisma.user.update({
-        where: { id: existingUser.id },
-        data: { lastLoginAt: new Date() },
-      })
+      await execute(
+        'UPDATE User SET lastLoginAt = NOW(3) WHERE id = ?',
+        [existingUser.id]
+      )
 
       return true
     },

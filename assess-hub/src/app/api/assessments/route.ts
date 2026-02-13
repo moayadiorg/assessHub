@@ -1,9 +1,19 @@
-import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { query, queryOne, execute, isDuplicateEntryError } from '@/lib/sql-helpers'
+import { newId } from '@/lib/id'
+import type { Assessment, AssessmentType, Customer } from '@/types/db'
 
 const MAX_NAME_LENGTH = 200
+
+interface AssessmentRow extends Assessment {
+  atId: string
+  atName: string
+  atIconColor: string
+  responseCount: number
+  totalQuestions: number
+}
 
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions)
@@ -16,53 +26,60 @@ export async function GET(request: Request) {
   const typeId = searchParams.get('typeId')
   const search = searchParams.get('search')
 
-  const where: any = {}
+  // Build WHERE conditions
+  const conditions: string[] = ['1=1']
+  const params: unknown[] = []
 
   if (status) {
-    where.status = status
+    conditions.push('a.status = ?')
+    params.push(status)
   }
 
   if (typeId) {
-    where.assessmentTypeId = typeId
+    conditions.push('a.assessmentTypeId = ?')
+    params.push(typeId)
   }
 
   if (search) {
-    where.OR = [
-      { name: { contains: search } },
-      { customerName: { contains: search } }
-    ]
+    conditions.push('(a.name LIKE CONCAT(\'%\',?,\'%\') OR a.customerName LIKE CONCAT(\'%\',?,\'%\'))')
+    params.push(search, search)
   }
 
-  const assessments = await prisma.assessment.findMany({
-    where,
-    include: {
-      assessmentType: {
-        select: { id: true, name: true, iconColor: true }
-      },
-      _count: {
-        select: { responses: true }
-      }
-    },
-    orderBy: { updatedAt: 'desc' }
-  })
+  const sql = `
+    SELECT a.*,
+      at.id as atId, at.name as atName, at.iconColor as atIconColor,
+      (SELECT COUNT(*) FROM Response r WHERE r.assessmentId = a.id) as responseCount,
+      (SELECT COUNT(*) FROM Question q JOIN Category c ON c.id = q.categoryId WHERE c.assessmentTypeId = a.assessmentTypeId) as totalQuestions
+    FROM Assessment a
+    JOIN AssessmentType at ON at.id = a.assessmentTypeId
+    WHERE ${conditions.join(' AND ')}
+    ORDER BY a.updatedAt DESC
+  `
 
-  // Add question count for progress calculation
-  const enriched = await Promise.all(
-    assessments.map(async (assessment) => {
-      const totalQuestions = await prisma.question.count({
-        where: {
-          category: {
-            assessmentTypeId: assessment.assessmentTypeId
-          }
-        }
-      })
-      return {
-        ...assessment,
-        totalQuestions,
-        answeredQuestions: assessment._count.responses
-      }
-    })
-  )
+  const rows = await query<AssessmentRow>(sql, params)
+
+  // Transform to match Prisma shape
+  const enriched = rows.map(row => ({
+    id: row.id,
+    name: row.name,
+    customerName: row.customerName,
+    customerId: row.customerId,
+    assessmentTypeId: row.assessmentTypeId,
+    createdBy: row.createdBy,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    status: row.status,
+    assessmentType: {
+      id: row.atId,
+      name: row.atName,
+      iconColor: row.atIconColor
+    },
+    _count: {
+      responses: row.responseCount
+    },
+    totalQuestions: row.totalQuestions,
+    answeredQuestions: row.responseCount
+  }))
 
   return NextResponse.json(enriched)
 }
@@ -91,9 +108,10 @@ export async function POST(request: Request) {
 
   // If customerId provided, verify it exists
   if (customerId) {
-    const customer = await prisma.customer.findUnique({
-      where: { id: customerId }
-    })
+    const customer = await queryOne<Customer>(
+      'SELECT * FROM Customer WHERE id = ?',
+      [customerId]
+    )
     if (!customer) {
       return NextResponse.json({ error: 'Customer not found' }, { status: 400 })
     }
@@ -109,21 +127,26 @@ export async function POST(request: Request) {
       )
     }
 
-    let customer = await prisma.customer.findUnique({
-      where: { name: customerName }
-    })
+    let customer = await queryOne<Customer>(
+      'SELECT * FROM Customer WHERE name = ?',
+      [customerName]
+    )
     if (!customer) {
       try {
-        customer = await prisma.customer.create({
-          data: { name: customerName }
-        })
-      } catch (error: any) {
+        const customerId = newId()
+        await execute(
+          'INSERT INTO Customer (id, name, createdAt, updatedAt) VALUES (?, ?, NOW(3), NOW(3))',
+          [customerId, customerName]
+        )
+        customer = { id: customerId, name: customerName, createdAt: new Date(), updatedAt: new Date() }
+      } catch (error: unknown) {
         // Handle race condition where another request created the same customer
-        if (error.code === 'P2002') {
+        if (isDuplicateEntryError(error)) {
           // Retry finding the customer that was just created
-          customer = await prisma.customer.findUnique({
-            where: { name: customerName }
-          })
+          customer = await queryOne<Customer>(
+            'SELECT * FROM Customer WHERE name = ?',
+            [customerName]
+          )
           if (!customer) {
             // Extremely unlikely, but handle it gracefully
             return NextResponse.json(
@@ -145,9 +168,10 @@ export async function POST(request: Request) {
   }
 
   // Verify assessment type exists
-  const typeExists = await prisma.assessmentType.findUnique({
-    where: { id: body.assessmentTypeId }
-  })
+  const typeExists = await queryOne<AssessmentType>(
+    'SELECT * FROM AssessmentType WHERE id = ?',
+    [body.assessmentTypeId]
+  )
 
   if (!typeExists) {
     return NextResponse.json(
@@ -156,20 +180,33 @@ export async function POST(request: Request) {
     )
   }
 
-  const assessment = await prisma.assessment.create({
-    data: {
-      name: body.name.trim(),
-      customerName, // Keep for backward compatibility
-      customerId,   // New relation
-      assessmentTypeId: body.assessmentTypeId,
-      createdBy: body.createdBy.trim(),
-      status: 'draft'
-    },
-    include: {
-      assessmentType: true,
-      customer: true
-    }
-  })
+  // Create assessment
+  const assessmentId = newId()
+  await execute(
+    `INSERT INTO Assessment (id, name, customerName, customerId, assessmentTypeId, createdBy, status, createdAt, updatedAt)
+     VALUES (?, ?, ?, ?, ?, ?, 'draft', NOW(3), NOW(3))`,
+    [assessmentId, body.name.trim(), customerName, customerId, body.assessmentTypeId, body.createdBy.trim()]
+  )
 
-  return NextResponse.json(assessment, { status: 201 })
+  // Query back with includes
+  const assessment = await queryOne<Assessment>(
+    'SELECT * FROM Assessment WHERE id = ?',
+    [assessmentId]
+  )
+
+  const assessmentType = await queryOne<AssessmentType>(
+    'SELECT * FROM AssessmentType WHERE id = ?',
+    [body.assessmentTypeId]
+  )
+
+  const customer = await queryOne<Customer>(
+    'SELECT * FROM Customer WHERE id = ?',
+    [customerId]
+  )
+
+  return NextResponse.json({
+    ...assessment,
+    assessmentType,
+    customer
+  }, { status: 201 })
 }

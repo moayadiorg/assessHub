@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import pool from '@/lib/db'
 
 interface HealthResponse {
   status: 'ok' | 'degraded' | 'error'
@@ -10,7 +10,7 @@ export async function GET(): Promise<NextResponse<HealthResponse>> {
   const timestamp = new Date().toISOString()
 
   try {
-    await prisma.$queryRaw`SELECT 1`
+    await pool.execute('SELECT 1')
     return NextResponse.json({ status: 'ok', timestamp } satisfies HealthResponse)
   } catch {
     return NextResponse.json(

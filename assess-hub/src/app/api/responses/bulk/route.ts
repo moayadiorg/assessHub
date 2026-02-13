@@ -1,5 +1,6 @@
-import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
+import { transaction, execute } from '@/lib/sql-helpers'
+import { newId } from '@/lib/id'
 
 export async function PUT(request: Request) {
   const body = await request.json()
@@ -22,42 +23,25 @@ export async function PUT(request: Request) {
   }
 
   // Bulk upsert in transaction
-  const results = await prisma.$transaction(
-    body.responses.map((r: any) =>
-      prisma.response.upsert({
-        where: {
-          assessmentId_questionId: {
-            assessmentId: body.assessmentId,
-            questionId: r.questionId
-          }
-        },
-        update: {
-          score: r.score,
-          commentary: r.commentary ?? null
-        },
-        create: {
-          assessmentId: body.assessmentId,
-          questionId: r.questionId,
-          score: r.score,
-          commentary: r.commentary ?? null
-        }
-      })
-    )
-  )
-
-  // Update assessment status
-  await prisma.assessment.updateMany({
-    where: {
-      id: body.assessmentId,
-      status: 'draft'
-    },
-    data: {
-      status: 'in-progress'
+  await transaction(async (conn) => {
+    for (const r of body.responses) {
+      await conn.execute(
+        `INSERT INTO Response (id, assessmentId, questionId, score, commentary, createdAt, updatedAt)
+         VALUES (?, ?, ?, ?, ?, NOW(3), NOW(3))
+         ON DUPLICATE KEY UPDATE score = VALUES(score), commentary = VALUES(commentary), updatedAt = NOW(3)`,
+        [newId(), body.assessmentId, r.questionId, r.score, r.commentary ?? null]
+      )
     }
   })
 
+  // Update assessment status to in-progress if draft
+  await execute(
+    `UPDATE Assessment SET status = 'in-progress', updatedAt = NOW(3) WHERE id = ? AND status = 'draft'`,
+    [body.assessmentId]
+  )
+
   return NextResponse.json({
     success: true,
-    count: results.length
+    count: body.responses.length
   })
 }

@@ -1,60 +1,126 @@
-import { prisma } from '@/lib/prisma'
+import { query, groupBy } from '@/lib/sql-helpers'
 import { NextResponse } from 'next/server'
+import type { AssessmentType, Response } from '@/types/db'
 
 // Note: Dashboard is accessed from the main page which should have auth
 export async function GET() {
   try {
     // 1. Get total counts by status
-    const statusCounts = await prisma.assessment.groupBy({
-      by: ['status'],
-      _count: { id: true }
-    })
+    interface StatusCount {
+      status: string
+      cnt: number
+    }
 
-    // Convert to map for easy lookup
-    const statusMap = new Map(
-      statusCounts.map(s => [s.status, s._count.id])
+    const statusCounts = await query<StatusCount>(
+      'SELECT status, COUNT(*) as cnt FROM Assessment GROUP BY status',
+      []
     )
 
-    const totalAssessments = await prisma.assessment.count()
+    // Convert to map for easy lookup
+    const statusMap = new Map(statusCounts.map(s => [s.status, s.cnt]))
+
+    interface TotalCount {
+      total: number
+    }
+
+    const totalResult = await query<TotalCount>('SELECT COUNT(*) as total FROM Assessment', [])
+    const totalAssessments = totalResult[0]?.total || 0
     const draft = statusMap.get('draft') ?? 0
     const inProgress = statusMap.get('in-progress') ?? 0
     const completed = statusMap.get('completed') ?? 0
 
-    // 2. Get assessments by type with counts and calculate avg scores
-    const typeStats = await prisma.assessmentType.findMany({
-      where: { isActive: true },
-      include: {
-        assessments: {
-          select: {
-            id: true,
-            status: true,
-            responses: true
-          }
-        },
-        categories: {
-          orderBy: { order: 'asc' },
-          include: {
-            questions: {
-              orderBy: { order: 'asc' },
-              select: { id: true }
-            }
-          }
-        }
-      }
-    })
+    // 2. Get type stats with completed assessment counts
+    interface TypeStat {
+      typeId: string
+      typeName: string
+      iconColor: string
+      count: number
+      completedCount: number
+    }
 
-    const byType = typeStats.map(type => {
-      const count = type.assessments.length
-      const completedAssessments = type.assessments.filter(
-        a => a.status === 'completed'
+    const typeStats = await query<TypeStat>(
+      `SELECT at.id as typeId, at.name as typeName, at.iconColor,
+         COUNT(a.id) as count,
+         SUM(CASE WHEN a.status = 'completed' THEN 1 ELSE 0 END) as completedCount
+       FROM AssessmentType at
+       LEFT JOIN Assessment a ON a.assessmentTypeId = at.id
+       WHERE at.isActive = 1
+       GROUP BY at.id, at.name, at.iconColor`,
+      []
+    )
+
+    // Get completed assessments with responses for score calculation
+    interface AssessmentWithType {
+      id: string
+      assessmentTypeId: string
+    }
+
+    const completedAssessments = await query<AssessmentWithType>(
+      'SELECT id, assessmentTypeId FROM Assessment WHERE status = ?',
+      ['completed']
+    )
+
+    // Group by type
+    const assessmentsByType = groupBy(completedAssessments, a => a.assessmentTypeId)
+
+    // Get category structures for types that have completed assessments
+    const typeIdsWithCompleted = Array.from(assessmentsByType.keys())
+
+    interface CategoryQuestion {
+      assessmentTypeId: string
+      categoryId: string
+      questionId: string
+    }
+
+    let categoryQuestions: CategoryQuestion[] = []
+    if (typeIdsWithCompleted.length > 0) {
+      categoryQuestions = await query<CategoryQuestion>(
+        `SELECT c.assessmentTypeId, c.id as categoryId, q.id as questionId
+         FROM Category c
+         JOIN Question q ON q.categoryId = c.id
+         WHERE c.assessmentTypeId IN (${typeIdsWithCompleted.map(() => '?').join(',')})
+         ORDER BY c.\`order\` ASC, q.\`order\` ASC`,
+        typeIdsWithCompleted
       )
-      const completedCount = completedAssessments.length
+    }
 
-      // Calculate avg score only for completed assessments
+    // Group by type and category
+    const typeStructure = groupBy(categoryQuestions, cq => cq.assessmentTypeId)
+    const categoryStructure: Record<string, Array<{ questions: Array<{ id: string }> }>> = {}
+
+    for (const [typeId, items] of typeStructure.entries()) {
+      const categoriesMap = groupBy(items, item => item.categoryId)
+      categoryStructure[typeId] = Array.from(categoriesMap.values()).map(catItems => ({
+        questions: catItems.map(item => ({ id: item.questionId }))
+      }))
+    }
+
+    // Get all responses for completed assessments
+    let responses: Response[] = []
+    if (completedAssessments.length > 0) {
+      const assessmentIds = completedAssessments.map(a => a.id)
+      responses = await query<Response>(
+        `SELECT assessmentId, questionId, score FROM Response WHERE assessmentId IN (${assessmentIds.map(() => '?').join(',')})`,
+        assessmentIds
+      )
+    }
+
+    // Group responses by assessment
+    const responsesByAssessment = groupBy(responses, r => r.assessmentId)
+
+    // Calculate avg scores per type
+    const byType = typeStats.map(type => {
       let avgScore: number | null = null
-      if (completedCount > 0) {
-        const scores = completedAssessments
-          .map(assessment => calculateOverallScore(assessment.responses, type.categories))
+
+      if (type.completedCount > 0) {
+        const typeAssessments = assessmentsByType.get(type.typeId) || []
+        const categories = categoryStructure[type.typeId] || []
+
+        const scores = typeAssessments
+          .map(assessment => {
+            const assessmentResponses = responsesByAssessment.get(assessment.id) || []
+            return calculateOverallScore(assessmentResponses, categories)
+          })
           .filter((score): score is number => score !== null)
 
         if (scores.length > 0) {
@@ -65,56 +131,52 @@ export async function GET() {
       }
 
       return {
-        typeId: type.id,
-        typeName: type.name,
+        typeId: type.typeId,
+        typeName: type.typeName,
         iconColor: type.iconColor,
-        count,
-        completedCount,
+        count: type.count,
+        completedCount: type.completedCount,
         avgScore
       }
     })
 
     // 3. Get 5 most recent assessments
-    const recentAssessments = await prisma.assessment.findMany({
-      take: 5,
-      orderBy: { updatedAt: 'desc' },
-      include: {
-        assessmentType: {
-          select: {
-            name: true,
-            categories: {
-              orderBy: { order: 'asc' },
-              include: {
-                questions: {
-                  orderBy: { order: 'asc' },
-                  select: { id: true }
-                }
-              }
-            }
-          }
-        },
-        responses: true
-      }
-    })
+    interface RecentAssessment {
+      id: string
+      name: string
+      customerName: string
+      status: string
+      updatedAt: Date
+      assessmentTypeId: string
+      typeName: string
+    }
+
+    const recentAssessments = await query<RecentAssessment>(
+      `SELECT a.id, a.name, a.customerName, a.status, a.updatedAt, a.assessmentTypeId,
+         at.name as typeName
+       FROM Assessment a
+       JOIN AssessmentType at ON at.id = a.assessmentTypeId
+       ORDER BY a.updatedAt DESC LIMIT 5`,
+      []
+    )
 
     const recentAssessmentsData = recentAssessments.map(assessment => {
       // Calculate score only for completed assessments
       let score: number | null = null
       if (assessment.status === 'completed') {
-        score = calculateOverallScore(
-          assessment.responses,
-          assessment.assessmentType.categories
-        )
+        const assessmentResponses = responsesByAssessment.get(assessment.id) || []
+        const categories = categoryStructure[assessment.assessmentTypeId] || []
+        score = calculateOverallScore(assessmentResponses, categories)
       }
 
       return {
         id: assessment.id,
         name: assessment.name,
         customerName: assessment.customerName,
-        typeName: assessment.assessmentType.name,
+        typeName: assessment.typeName,
         status: assessment.status,
         score,
-        updatedAt: assessment.updatedAt.toISOString()
+        updatedAt: new Date(assessment.updatedAt).toISOString()
       }
     })
 

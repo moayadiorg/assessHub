@@ -1,5 +1,6 @@
-import { prisma } from '@/lib/prisma'
+import { query, queryOne, groupBy } from '@/lib/sql-helpers'
 import { NextResponse } from 'next/server'
+import type { Customer, Assessment, Response } from '@/types/db'
 
 // Note: Page-level auth is handled by middleware for /reports routes
 export async function GET(
@@ -8,30 +9,11 @@ export async function GET(
 ) {
   const { id } = await params
 
-  const customer = await prisma.customer.findUnique({
-    where: { id },
-    include: {
-      assessments: {
-        where: { status: 'completed' },
-        include: {
-          assessmentType: {
-            include: {
-              categories: {
-                orderBy: { order: 'asc' },
-                include: {
-                  questions: {
-                    orderBy: { order: 'asc' }
-                  }
-                }
-              }
-            }
-          },
-          responses: true
-        },
-        orderBy: { updatedAt: 'asc' } // Chronological for trends
-      }
-    }
-  })
+  // 1. Get customer
+  const customer = await queryOne<Customer>(
+    'SELECT id, name FROM Customer WHERE id = ?',
+    [id]
+  )
 
   if (!customer) {
     return NextResponse.json(
@@ -40,7 +22,74 @@ export async function GET(
     )
   }
 
-  // Group assessments by type
+  // 2. Get completed assessments for this customer with type info
+  const assessments = await query<Assessment & { typeName: string; iconColor: string }>(
+    `SELECT a.id, a.name, a.assessmentTypeId, a.updatedAt,
+       at.name as typeName, at.iconColor
+     FROM Assessment a
+     JOIN AssessmentType at ON at.id = a.assessmentTypeId
+     WHERE a.customerId = ? AND a.status = 'completed'
+     ORDER BY a.updatedAt ASC`,
+    [id]
+  )
+
+  if (assessments.length === 0) {
+    return NextResponse.json({
+      customer: {
+        id: customer.id,
+        name: customer.name
+      },
+      totalAssessments: 0,
+      assessmentsByType: []
+    })
+  }
+
+  // 3. Get unique assessment type IDs
+  const typeIds = [...new Set(assessments.map(a => a.assessmentTypeId))]
+
+  // 4. Get all category+question structure for relevant assessment types
+  interface CategoryQuestion {
+    assessmentTypeId: string
+    categoryId: string
+    categoryName: string
+    order: number
+    questionId: string
+  }
+
+  const categoryQuestions = await query<CategoryQuestion>(
+    `SELECT c.assessmentTypeId, c.id as categoryId, c.name as categoryName, c.\`order\`,
+       q.id as questionId
+     FROM Category c
+     JOIN Question q ON q.categoryId = c.id
+     WHERE c.assessmentTypeId IN (${typeIds.map(() => '?').join(',')})
+     ORDER BY c.\`order\` ASC, q.\`order\` ASC`,
+    typeIds
+  )
+
+  // Group by type and category
+  const typeStructure = groupBy(categoryQuestions, cq => cq.assessmentTypeId)
+  const categoryStructure: Record<string, Array<{ id: string; name: string; questions: Array<{ id: string }> }>> = {}
+
+  for (const [typeId, items] of typeStructure.entries()) {
+    const categoriesMap = groupBy(items, item => item.categoryId)
+    categoryStructure[typeId] = Array.from(categoriesMap.entries()).map(([catId, catItems]) => ({
+      id: catId,
+      name: catItems[0].categoryName,
+      questions: catItems.map(item => ({ id: item.questionId }))
+    }))
+  }
+
+  // 5. Get all responses for these assessments
+  const assessmentIds = assessments.map(a => a.id)
+  const responses = await query<Response>(
+    `SELECT assessmentId, questionId, score FROM Response WHERE assessmentId IN (${assessmentIds.map(() => '?').join(',')})`,
+    assessmentIds
+  )
+
+  // Group responses by assessment
+  const responsesByAssessment = groupBy(responses, r => r.assessmentId)
+
+  // 6. Group assessments by type
   const typeMap = new Map<string, {
     typeId: string
     typeName: string
@@ -48,28 +97,30 @@ export async function GET(
     assessments: any[]
   }>()
 
-  for (const assessment of customer.assessments) {
-    const typeId = assessment.assessmentType.id
+  for (const assessment of assessments) {
+    const typeId = assessment.assessmentTypeId
 
     if (!typeMap.has(typeId)) {
       typeMap.set(typeId, {
         typeId,
-        typeName: assessment.assessmentType.name,
-        iconColor: assessment.assessmentType.iconColor,
+        typeName: assessment.typeName,
+        iconColor: assessment.iconColor,
         assessments: []
       })
     }
 
     // Calculate scores for this assessment
+    const assessmentResponses = responsesByAssessment.get(assessment.id) || []
+    const categories = categoryStructure[typeId] || []
     const { overallScore, maturityLevel, categoryScores } = calculateScores(
-      assessment.responses,
-      assessment.assessmentType.categories
+      assessmentResponses,
+      categories
     )
 
     typeMap.get(typeId)!.assessments.push({
       id: assessment.id,
       name: assessment.name,
-      completedAt: assessment.updatedAt.toISOString(),
+      completedAt: new Date(assessment.updatedAt).toISOString(),
       overallScore,
       maturityLevel,
       categoryScores
@@ -107,7 +158,7 @@ export async function GET(
       id: customer.id,
       name: customer.name
     },
-    totalAssessments: customer.assessments.length,
+    totalAssessments: assessments.length,
     assessmentsByType
   })
 }

@@ -1,4 +1,6 @@
-import { prisma } from '@/lib/prisma'
+import { query, queryOne, execute, transaction } from '@/lib/sql-helpers'
+import { newId } from '@/lib/id'
+import { Question, QuestionOption } from '@/types/db'
 import { NextResponse } from 'next/server'
 
 function getDefaultLabel(score: number): string {
@@ -23,15 +25,40 @@ export async function GET(request: Request) {
     )
   }
 
-  const questions = await prisma.question.findMany({
-    where: { categoryId },
-    include: {
-      options: { orderBy: { score: 'asc' } }
-    },
-    orderBy: { order: 'asc' }
-  })
+  const questions = await query<Question>(
+    'SELECT id, categoryId, text, description, `order` FROM Question WHERE categoryId = ? ORDER BY `order` ASC',
+    [categoryId]
+  )
 
-  return NextResponse.json(questions)
+  if (questions.length === 0) {
+    return NextResponse.json([])
+  }
+
+  // Get all options for these questions
+  const questionIds = questions.map(q => q.id)
+  const options = await query<QuestionOption>(
+    'SELECT id, questionId, score, label, description FROM QuestionOption WHERE questionId IN (' +
+      questionIds.map(() => '?').join(',') +
+      ') ORDER BY score ASC',
+    questionIds
+  )
+
+  // Group options by questionId
+  const optionsByQuestion = new Map<string, QuestionOption[]>()
+  for (const option of options) {
+    if (!optionsByQuestion.has(option.questionId)) {
+      optionsByQuestion.set(option.questionId, [])
+    }
+    optionsByQuestion.get(option.questionId)!.push(option)
+  }
+
+  // Assemble response
+  const questionsWithOptions = questions.map(question => ({
+    ...question,
+    options: optionsByQuestion.get(question.id) || []
+  }))
+
+  return NextResponse.json(questionsWithOptions)
 }
 
 export async function POST(request: Request) {
@@ -55,31 +82,57 @@ export async function POST(request: Request) {
   // Get next order if not provided
   let order = body.order
   if (order === undefined) {
-    const maxOrder = await prisma.question.aggregate({
-      where: { categoryId: body.categoryId },
-      _max: { order: true }
-    })
-    order = (maxOrder._max.order ?? 0) + 1
+    const maxOrderRow = await queryOne<{ m: number }>(
+      'SELECT COALESCE(MAX(`order`), 0) as m FROM Question WHERE categoryId = ?',
+      [body.categoryId]
+    )
+    order = (maxOrderRow?.m ?? 0) + 1
   }
 
-  const question = await prisma.question.create({
-    data: {
-      categoryId: body.categoryId,
-      text: body.text.trim(),
-      description: body.description?.trim() || null,
-      order,
-      options: {
-        create: body.options.map((opt: any, idx: number) => ({
-          score: idx + 1,
-          label: opt.label || getDefaultLabel(idx + 1),
-          description: opt.description || '',
-        }))
-      }
-    },
-    include: {
-      options: { orderBy: { score: 'asc' } }
+  const questionId = newId()
+  const text = body.text.trim()
+  const description = body.description?.trim() || null
+
+  const options: QuestionOption[] = []
+
+  await transaction(async (conn) => {
+    // Insert question
+    await conn.execute(
+      'INSERT INTO Question (id, categoryId, text, description, `order`) VALUES (?, ?, ?, ?, ?)',
+      [questionId, body.categoryId, text, description, order]
+    )
+
+    // Insert 5 options
+    for (let idx = 0; idx < 5; idx++) {
+      const opt = body.options[idx]
+      const optionId = newId()
+      const score = idx + 1
+      const label = opt.label || getDefaultLabel(score)
+      const optDescription = opt.description || ''
+
+      await conn.execute(
+        'INSERT INTO QuestionOption (id, questionId, score, label, description) VALUES (?, ?, ?, ?, ?)',
+        [optionId, questionId, score, label, optDescription]
+      )
+
+      options.push({
+        id: optionId,
+        questionId,
+        score,
+        label,
+        description: optDescription
+      })
     }
   })
+
+  const question = {
+    id: questionId,
+    categoryId: body.categoryId,
+    text,
+    description,
+    order,
+    options
+  }
 
   return NextResponse.json(question, { status: 201 })
 }

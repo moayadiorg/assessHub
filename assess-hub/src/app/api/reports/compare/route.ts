@@ -1,5 +1,6 @@
-import { prisma } from '@/lib/prisma'
+import { query, queryOne, groupBy } from '@/lib/sql-helpers'
 import { NextResponse } from 'next/server'
+import type { Assessment, AssessmentType, Customer, Response } from '@/types/db'
 
 // Note: Page-level auth is handled by middleware for /reports routes
 export async function GET(request: Request) {
@@ -21,42 +22,10 @@ export async function GET(request: Request) {
     )
   }
 
-  // Fetch both assessments with full data
+  // 1. Get both assessments
   const [assessment1, assessment2] = await Promise.all([
-    prisma.assessment.findUnique({
-      where: { id: a1 },
-      include: {
-        assessmentType: {
-          include: {
-            categories: {
-              orderBy: { order: 'asc' },
-              include: {
-                questions: { orderBy: { order: 'asc' } }
-              }
-            }
-          }
-        },
-        responses: true,
-        customer: true
-      }
-    }),
-    prisma.assessment.findUnique({
-      where: { id: a2 },
-      include: {
-        assessmentType: {
-          include: {
-            categories: {
-              orderBy: { order: 'asc' },
-              include: {
-                questions: { orderBy: { order: 'asc' } }
-              }
-            }
-          }
-        },
-        responses: true,
-        customer: true
-      }
-    })
+    queryOne<Assessment>('SELECT * FROM Assessment WHERE id = ?', [a1]),
+    queryOne<Assessment>('SELECT * FROM Assessment WHERE id = ?', [a2])
   ])
 
   if (!assessment1) {
@@ -73,7 +42,7 @@ export async function GET(request: Request) {
     )
   }
 
-  // Verify same assessment type
+  // 2. Verify same assessment type
   if (assessment1.assessmentTypeId !== assessment2.assessmentTypeId) {
     return NextResponse.json(
       { error: 'Assessments must be of the same type to compare' },
@@ -81,15 +50,65 @@ export async function GET(request: Request) {
     )
   }
 
+  // 3. Get assessment type name
+  const assessmentType = await queryOne<AssessmentType>(
+    'SELECT id, name FROM AssessmentType WHERE id = ?',
+    [assessment1.assessmentTypeId]
+  )
+
+  if (!assessmentType) {
+    return NextResponse.json(
+      { error: 'Assessment type not found' },
+      { status: 404 }
+    )
+  }
+
+  // 4. Get categories+questions structure
+  interface CategoryQuestion {
+    categoryId: string
+    categoryName: string
+    order: number
+    questionId: string
+  }
+
+  const categoryQuestions = await query<CategoryQuestion>(
+    `SELECT c.id as categoryId, c.name as categoryName, c.\`order\`,
+       q.id as questionId
+     FROM Category c
+     JOIN Question q ON q.categoryId = c.id
+     WHERE c.assessmentTypeId = ?
+     ORDER BY c.\`order\` ASC, q.\`order\` ASC`,
+    [assessment1.assessmentTypeId]
+  )
+
+  // Group by category
+  const categoriesMap = groupBy(categoryQuestions, cq => cq.categoryId)
+  const categories = Array.from(categoriesMap.entries()).map(([catId, items]) => ({
+    id: catId,
+    name: items[0].categoryName,
+    questions: items.map(item => ({ id: item.questionId }))
+  }))
+
+  // 5. Get responses for both assessments
+  const responses = await query<Response>(
+    'SELECT assessmentId, questionId, score FROM Response WHERE assessmentId IN (?, ?)',
+    [a1, a2]
+  )
+
+  const responsesByAssessment = groupBy(responses, r => r.assessmentId)
+  const responses1 = responsesByAssessment.get(a1) || []
+  const responses2 = responsesByAssessment.get(a2) || []
+
+  // 6. Get customer names
+  const customers = await query<Customer>(
+    'SELECT id, name FROM Customer WHERE id IN (?, ?)',
+    [assessment1.customerId, assessment2.customerId]
+  )
+  const customerMap = new Map(customers.map(c => [c.id, c.name]))
+
   // Calculate scores for both
-  const scores1 = calculateScores(
-    assessment1.responses,
-    assessment1.assessmentType.categories
-  )
-  const scores2 = calculateScores(
-    assessment2.responses,
-    assessment2.assessmentType.categories
-  )
+  const scores1 = calculateScores(responses1, categories)
+  const scores2 = calculateScores(responses2, categories)
 
   // Build comparison
   const categoryDeltas = scores1.categoryScores.map((cat1, index) => {
@@ -109,14 +128,14 @@ export async function GET(request: Request) {
 
   return NextResponse.json({
     assessmentType: {
-      id: assessment1.assessmentType.id,
-      name: assessment1.assessmentType.name
+      id: assessmentType.id,
+      name: assessmentType.name
     },
     assessment1: {
       id: assessment1.id,
       name: assessment1.name,
-      customerName: assessment1.customer?.name || assessment1.customerName,
-      completedAt: assessment1.updatedAt.toISOString(),
+      customerName: customerMap.get(assessment1.customerId!) || assessment1.customerName,
+      completedAt: new Date(assessment1.updatedAt).toISOString(),
       overallScore: scores1.overallScore,
       maturityLevel: scores1.maturityLevel,
       categoryScores: scores1.categoryScores
@@ -124,8 +143,8 @@ export async function GET(request: Request) {
     assessment2: {
       id: assessment2.id,
       name: assessment2.name,
-      customerName: assessment2.customer?.name || assessment2.customerName,
-      completedAt: assessment2.updatedAt.toISOString(),
+      customerName: customerMap.get(assessment2.customerId!) || assessment2.customerName,
+      completedAt: new Date(assessment2.updatedAt).toISOString(),
       overallScore: scores2.overallScore,
       maturityLevel: scores2.maturityLevel,
       categoryScores: scores2.categoryScores

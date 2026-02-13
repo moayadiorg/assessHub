@@ -1,29 +1,27 @@
-import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
+import { query, queryOne, groupBy } from '@/lib/sql-helpers'
+import type { Assessment, Response } from '@/types/db'
+
+interface CategoryQuestionRow {
+  categoryId: string
+  categoryName: string
+  order: number
+  questionId: string
+  questionText: string
+  qOrder: number
+}
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
-  const assessment = await prisma.assessment.findUnique({
-    where: { id },
-    include: {
-      responses: true,
-      assessmentType: {
-        include: {
-          categories: {
-            orderBy: { order: 'asc' },
-            include: {
-              questions: {
-                orderBy: { order: 'asc' }
-              }
-            }
-          }
-        }
-      }
-    }
-  })
+
+  // 1. Get assessment
+  const assessment = await queryOne<Assessment>(
+    'SELECT * FROM Assessment WHERE id = ?',
+    [id]
+  )
 
   if (!assessment) {
     return NextResponse.json(
@@ -32,34 +30,55 @@ export async function GET(
     )
   }
 
-  // Build responses map
-  const responsesMap = new Map(
-    assessment.responses.map(r => [r.questionId, r])
+  // 2. Get categories with questions
+  const categoryQuestions = await query<CategoryQuestionRow>(
+    `SELECT c.id as categoryId, c.name as categoryName, c.\`order\`,
+       q.id as questionId, q.text as questionText, q.\`order\` as qOrder
+     FROM Category c
+     JOIN Question q ON q.categoryId = c.id
+     WHERE c.assessmentTypeId = ?
+     ORDER BY c.\`order\` ASC, q.\`order\` ASC`,
+    [assessment.assessmentTypeId]
   )
 
+  // 3. Get responses
+  const responses = await query<Response>(
+    'SELECT questionId, score, commentary FROM Response WHERE assessmentId = ?',
+    [id]
+  )
+
+  // Build responses map
+  const responsesMap = new Map(
+    responses.map(r => [r.questionId, r])
+  )
+
+  // Group category questions by categoryId
+  const questionsByCategory = groupBy(categoryQuestions, cq => cq.categoryId)
+
   // Calculate category scores
-  const categoryScores = assessment.assessmentType.categories.map(category => {
-    const questionIds = category.questions.map(q => q.id)
-    const responses = questionIds
+  const categoryScores = Array.from(questionsByCategory.entries()).map(([categoryId, questions]) => {
+    const category = questions[0] // First question has category info
+    const questionIds = questions.map(q => q.questionId)
+    const categoryResponses = questionIds
       .map(id => responsesMap.get(id))
       .filter(Boolean)
 
-    const totalScore = responses.reduce((sum, r) => sum + r!.score, 0)
-    const avgScore = responses.length > 0
-      ? Math.round((totalScore / responses.length) * 10) / 10
+    const totalScore = categoryResponses.reduce((sum, r) => sum + r!.score, 0)
+    const avgScore = categoryResponses.length > 0
+      ? Math.round((totalScore / categoryResponses.length) * 10) / 10
       : 0
 
     return {
-      categoryId: category.id,
-      categoryName: category.name,
+      categoryId: category.categoryId,
+      categoryName: category.categoryName,
       score: avgScore,
-      answeredQuestions: responses.length,
+      answeredQuestions: categoryResponses.length,
       totalQuestions: questionIds.length,
-      questionScores: category.questions.map(q => ({
-        questionId: q.id,
-        questionText: q.text,
-        score: responsesMap.get(q.id)?.score ?? null,
-        commentary: responsesMap.get(q.id)?.commentary ?? null
+      questionScores: questions.map(q => ({
+        questionId: q.questionId,
+        questionText: q.questionText,
+        score: responsesMap.get(q.questionId)?.score ?? null,
+        commentary: responsesMap.get(q.questionId)?.commentary ?? null
       }))
     }
   })

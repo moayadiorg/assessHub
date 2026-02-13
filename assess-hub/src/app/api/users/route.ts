@@ -1,7 +1,9 @@
-import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { query, queryOne, execute, isDuplicateEntryError } from '@/lib/sql-helpers'
+import { newId } from '@/lib/id'
+import type { DbUser } from '@/types/db'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const VALID_ROLES = ['admin', 'sa', 'reader']
@@ -26,42 +28,38 @@ export async function GET(request: Request) {
     const search = searchParams.get('search')
     const role = searchParams.get('role')
 
-    const where: any = {}
+    // Build dynamic WHERE clause
+    const conditions: string[] = []
+    const params: any[] = []
 
     if (search) {
-      where.OR = [
-        { email: { contains: search } },
-        { name: { contains: search } }
-      ]
+      conditions.push('(email LIKE CONCAT(\'%\', ?, \'%\') OR name LIKE CONCAT(\'%\', ?, \'%\'))')
+      params.push(search, search)
     }
 
     if (role && VALID_ROLES.includes(role)) {
-      where.role = role
+      conditions.push('role = ?')
+      params.push(role)
     }
 
-    const users = await prisma.user.findMany({
-      where,
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        isActive: true,
-        lastLoginAt: true,
-        createdAt: true,
-        createdBy: true
-      },
-      orderBy: { createdAt: 'desc' }
-    })
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
+
+    const users = await query<DbUser>(
+      `SELECT id, email, name, role, isActive, lastLoginAt, createdAt, createdBy
+       FROM User
+       ${whereClause}
+       ORDER BY createdAt DESC`,
+      params
+    )
 
     return NextResponse.json(users.map(u => ({
       id: u.id,
       email: u.email,
       name: u.name,
       role: u.role,
-      isActive: u.isActive,
-      lastLoginAt: u.lastLoginAt?.toISOString() || null,
-      createdAt: u.createdAt.toISOString(),
+      isActive: !!u.isActive,
+      lastLoginAt: u.lastLoginAt ? new Date(u.lastLoginAt).toISOString() : null,
+      createdAt: new Date(u.createdAt).toISOString(),
       createdBy: u.createdBy
     })))
   } catch (error) {
@@ -117,9 +115,10 @@ export async function POST(request: Request) {
 
   try {
     // Check if email already exists
-    const existing = await prisma.user.findUnique({
-      where: { email }
-    })
+    const existing = await queryOne<DbUser>(
+      'SELECT id FROM User WHERE email = ?',
+      [email]
+    )
 
     if (existing) {
       return NextResponse.json(
@@ -129,39 +128,40 @@ export async function POST(request: Request) {
     }
 
     // Create user
-    const user = await prisma.user.create({
-      data: {
-        email,
-        name: body.name?.trim() || null,
-        role: body.role,
-        isActive: true,
-        createdBy: session.user.id
-      },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        isActive: true,
-        lastLoginAt: true,
-        createdAt: true,
-        createdBy: true
-      }
-    })
+    const userId = newId()
+    const name = body.name?.trim() || null
+
+    await execute(
+      `INSERT INTO User (id, email, name, role, isActive, createdBy, createdAt)
+       VALUES (?, ?, ?, ?, 1, ?, NOW(3))`,
+      [userId, email, name, body.role, session.user.id]
+    )
+
+    // Fetch the created user
+    const user = await queryOne<DbUser>(
+      `SELECT id, email, name, role, isActive, lastLoginAt, createdAt, createdBy
+       FROM User
+       WHERE id = ?`,
+      [userId]
+    )
+
+    if (!user) {
+      throw new Error('Failed to retrieve created user')
+    }
 
     return NextResponse.json({
       id: user.id,
       email: user.email,
       name: user.name,
       role: user.role,
-      isActive: user.isActive,
-      lastLoginAt: user.lastLoginAt?.toISOString() || null,
-      createdAt: user.createdAt.toISOString(),
+      isActive: !!user.isActive,
+      lastLoginAt: user.lastLoginAt ? new Date(user.lastLoginAt).toISOString() : null,
+      createdAt: new Date(user.createdAt).toISOString(),
       createdBy: user.createdBy
     }, { status: 201 })
   } catch (error: any) {
     // Handle race condition on unique constraint
-    if (error.code === 'P2002') {
+    if (isDuplicateEntryError(error)) {
       return NextResponse.json(
         { error: 'User with this email already exists' },
         { status: 409 }

@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma'
+import { transaction } from '@/lib/sql-helpers'
 import { NextResponse } from 'next/server'
 
 export async function PUT(request: Request) {
@@ -12,14 +12,14 @@ export async function PUT(request: Request) {
   }
 
   // Update all in a transaction
-  await prisma.$transaction(
-    questionIds.map((id, index) =>
-      prisma.question.update({
-        where: { id },
-        data: { order: index + 1 }
-      })
-    )
-  )
+  await transaction(async (conn) => {
+    for (let i = 0; i < questionIds.length; i++) {
+      await conn.execute(
+        'UPDATE Question SET `order` = ? WHERE id = ?',
+        [i + 1, questionIds[i]]
+      )
+    }
+  })
 
   return NextResponse.json({ success: true })
 }

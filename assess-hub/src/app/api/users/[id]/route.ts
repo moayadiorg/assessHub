@@ -1,7 +1,8 @@
-import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { queryOne, execute } from '@/lib/sql-helpers'
+import type { DbUser } from '@/types/db'
 
 const VALID_ROLES = ['admin', 'sa', 'reader']
 
@@ -26,20 +27,12 @@ export async function GET(
   try {
     const { id } = await params
 
-    const user = await prisma.user.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        isActive: true,
-        lastLoginAt: true,
-        createdAt: true,
-        createdBy: true,
-        image: true
-      }
-    })
+    const user = await queryOne<DbUser>(
+      `SELECT id, email, name, role, isActive, lastLoginAt, createdAt, createdBy, image
+       FROM User
+       WHERE id = ?`,
+      [id]
+    )
 
     if (!user) {
       return NextResponse.json(
@@ -53,9 +46,9 @@ export async function GET(
       email: user.email,
       name: user.name,
       role: user.role,
-      isActive: user.isActive,
-      lastLoginAt: user.lastLoginAt?.toISOString() || null,
-      createdAt: user.createdAt.toISOString(),
+      isActive: !!user.isActive,
+      lastLoginAt: user.lastLoginAt ? new Date(user.lastLoginAt).toISOString() : null,
+      createdAt: new Date(user.createdAt).toISOString(),
       createdBy: user.createdBy,
       image: user.image
     })
@@ -107,9 +100,10 @@ export async function PATCH(
 
   try {
     // Check if user exists
-    const existing = await prisma.user.findUnique({
-      where: { id }
-    })
+    const existing = await queryOne<DbUser>(
+      'SELECT id FROM User WHERE id = ?',
+      [id]
+    )
 
     if (!existing) {
       return NextResponse.json(
@@ -118,52 +112,64 @@ export async function PATCH(
       )
     }
 
-    // Build update data
-    const updateData: any = {}
+    // Build dynamic SET clause
+    const setClauses: string[] = []
+    const params: any[] = []
 
     if (body.role !== undefined) {
-      updateData.role = body.role
+      setClauses.push('role = ?')
+      params.push(body.role)
     }
 
     if (body.isActive !== undefined) {
-      updateData.isActive = body.isActive
+      setClauses.push('isActive = ?')
+      params.push(body.isActive ? 1 : 0)
     }
 
     if (body.name !== undefined) {
-      updateData.name = body.name?.trim() || null
+      setClauses.push('name = ?')
+      params.push(body.name?.trim() || null)
     }
 
     // Reject empty updates
-    if (Object.keys(updateData).length === 0) {
+    if (setClauses.length === 0) {
       return NextResponse.json(
         { error: 'No fields to update' },
         { status: 400 }
       )
     }
 
-    const user = await prisma.user.update({
-      where: { id },
-      data: updateData,
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        isActive: true,
-        lastLoginAt: true,
-        createdAt: true,
-        createdBy: true
-      }
-    })
+    // Add updatedAt
+    setClauses.push('updatedAt = NOW(3)')
+
+    // Add id to params
+    params.push(id)
+
+    await execute(
+      `UPDATE User SET ${setClauses.join(', ')} WHERE id = ?`,
+      params
+    )
+
+    // Fetch updated user
+    const user = await queryOne<DbUser>(
+      `SELECT id, email, name, role, isActive, lastLoginAt, createdAt, createdBy
+       FROM User
+       WHERE id = ?`,
+      [id]
+    )
+
+    if (!user) {
+      throw new Error('Failed to retrieve updated user')
+    }
 
     return NextResponse.json({
       id: user.id,
       email: user.email,
       name: user.name,
       role: user.role,
-      isActive: user.isActive,
-      lastLoginAt: user.lastLoginAt?.toISOString() || null,
-      createdAt: user.createdAt.toISOString(),
+      isActive: !!user.isActive,
+      lastLoginAt: user.lastLoginAt ? new Date(user.lastLoginAt).toISOString() : null,
+      createdAt: new Date(user.createdAt).toISOString(),
       createdBy: user.createdBy
     })
   } catch (error) {
@@ -204,9 +210,10 @@ export async function DELETE(
   }
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { id }
-    })
+    const user = await queryOne<DbUser>(
+      'SELECT id FROM User WHERE id = ?',
+      [id]
+    )
 
     if (!user) {
       return NextResponse.json(
@@ -216,17 +223,18 @@ export async function DELETE(
     }
 
     // Delete user (cascade will handle accounts and sessions)
-    await prisma.user.delete({ where: { id } })
+    const result = await execute('DELETE FROM User WHERE id = ?', [id])
 
-    return NextResponse.json({ success: true })
-  } catch (error: any) {
     // Handle race condition if user was deleted between check and delete
-    if (error.code === 'P2025') {
+    if (result.affectedRows === 0) {
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
       )
     }
+
+    return NextResponse.json({ success: true })
+  } catch (error: any) {
     console.error('Error deleting user:', error)
     return NextResponse.json(
       { error: 'Failed to delete user' },
