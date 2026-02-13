@@ -39,3 +39,13 @@ coverage/
 # Misc
 *.tsbuildinfo
 next-env.d.ts
+
+# Secrets
+client_secret*.json
+
+# Agent / AI tooling
+.agents/
+.claude/
+
+# Temp notes
+issues.md

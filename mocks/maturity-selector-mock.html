@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maturity Selector — UX Mock</title>
+  <style>
+    :root {
+      --gray-3: #e5e7eb;
+      --gray-4: #d1d5db;
+      --gray-9: #4b5563;
+      --gray-11: #374151;
+      --gray-12: #111827;
+      --score-1: #ef4444;
+      --score-2: #f97316;
+      --score-3: #eab308;
+      --score-4: #22c55e;
+      --score-5: #10b981;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f9fafb;
+      padding: 40px;
+      color: var(--gray-12);
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      max-width: 720px;
+      margin: 0 auto;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .question-header {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .question-number {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--gray-4);
+      color: var(--gray-11);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+
+    .question-number.answered {
+      background: #6366f1;
+      color: white;
+    }
+
+    .question-text {
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    .question-desc {
+      font-size: 14px;
+      color: var(--gray-9);
+      margin-top: 4px;
+    }
+
+    /* Score Cards Row */
+    .score-cards {
+      display: flex;
+      gap: 8px;
+    }
+
+    .score-card {
+      flex: 1;
+      padding: 12px 8px;
+      border-radius: 8px;
+      border: 2px solid var(--gray-4);
+      background: transparent;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s ease;
+    }
+
+    .score-card:hover {
+      border-color: var(--gray-9);
+    }
+
+    .score-card.selected {
+      border-color: var(--card-color);
+      background-color: var(--card-bg);
+    }
+
+    .score-badge {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--gray-3);
+      color: var(--gray-11);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: bold;
+      margin: 0 auto 8px;
+    }
+
+    .score-card.selected .score-badge {
+      background: var(--card-color);
+      color: white;
+    }
+
+    .score-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--gray-11);
+    }
+
+    .score-card.selected .score-label {
+      font-weight: 700;
+      color: var(--card-color);
+    }
+
+    /* Selected Description */
+    .selected-description {
+      margin-top: 16px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      border-left: 3px solid var(--desc-color);
+      background: var(--desc-bg);
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--gray-12);
+      animation: fadeIn 0.15s ease;
+    }
+
+    .selected-description .desc-header {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--desc-color);
+      margin-bottom: 4px;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Assessment Guide Toggle */
+    .guide-toggle {
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--gray-9);
+      user-select: none;
+      padding: 4px 0;
+    }
+
+    .guide-toggle:hover {
+      color: var(--gray-12);
+    }
+
+    .guide-toggle .arrow {
+      font-size: 10px;
+      transition: transform 0.15s ease;
+    }
+
+    .guide-toggle.open .arrow {
+      transform: rotate(90deg);
+    }
+
+    /* Assessment Guide List */
+    .guide-list {
+      margin-top: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      animation: fadeIn 0.15s ease;
+    }
+
+    .guide-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.1s ease;
+    }
+
+    .guide-row:hover {
+      background: #f3f4f6;
+    }
+
+    .guide-row.active {
+      background: var(--row-bg);
+    }
+
+    .guide-row .badge {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: bold;
+      flex-shrink: 0;
+      color: white;
+      margin-top: 1px;
+    }
+
+    .guide-row .guide-label {
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+      margin-right: 4px;
+    }
+
+    .guide-row .guide-desc {
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--gray-9);
+    }
+
+    .guide-row .guide-text {
+      flex: 1;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 32px;
+      color: var(--gray-9);
+      font-weight: 400;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Maturity Selector — Proposed UX Mock</h2>
+
+  <div class="card" id="app"></div>
+
+  <script>
+    const COLORS = {
+      1: '#ef4444',
+      2: '#f97316',
+      3: '#eab308',
+      4: '#22c55e',
+      5: '#10b981',
+    };
+
+    const LABELS = {
+      1: 'Ad Hoc',
+      2: 'Developing',
+      3: 'Defined',
+      4: 'Managed',
+      5: 'Optimized',
+    };
+
+    const OPTIONS = [
+      { score: 1, label: 'Ad Hoc',      description: 'No defined IaC workflow. Manual infrastructure changes. Infrastructure changes initiated by user using developer driven plan and apply.' },
+      { score: 2, label: 'Developing',   description: 'Basic Git structure defined. Inconsistent branching strategy, duplication of code with unclear release process across environments. Releases may require manual code intervention or copy changes due to unstructured release workflow.' },
+      { score: 3, label: 'Defined',      description: 'Documented IaC workflow. Basic branching strategy. Using common code with environment specific variables.' },
+      { score: 4, label: 'Managed',      description: 'Automated GitOps driven IaC. Enforced branch protection. Consistently structured repos and consistent release process across environments.' },
+      { score: 5, label: 'Optimized',    description: 'Standardized GitOps driven IaC. Git structure is provided via self-service using IaC and integrated with secrets management without additional consumer integration effort. Branch protect rules are enforced and git approval required by policy for critical workloads.' },
+    ];
+
+    let selectedScore = null;
+    let showGuide = false;
+
+    function render() {
+      const app = document.getElementById('app');
+
+      // Question header
+      let html = `
+        <div class="question-header">
+          <div class="question-number ${selectedScore != null ? 'answered' : ''}">1</div>
+          <div>
+            <div class="question-text">IaC Workflow</div>
+            <div class="question-desc">Evaluate the maturity of IaC workflow and release processes.</div>
+          </div>
+        </div>
+      `;
+
+      // Score cards
+      html += '<div class="score-cards">';
+      for (const opt of OPTIONS) {
+        const sel = selectedScore === opt.score;
+        html += `
+          <div class="score-card ${sel ? 'selected' : ''}"
+               style="${sel ? `--card-color:${COLORS[opt.score]};--card-bg:${COLORS[opt.score]}15` : ''}"
+               onclick="select(${opt.score})">
+            <div class="score-badge">${opt.score}</div>
+            <div class="score-label">${opt.label}</div>
+          </div>
+        `;
+      }
+      html += '</div>';
+
+      // Selected description
+      if (selectedScore != null) {
+        const opt = OPTIONS.find(o => o.score === selectedScore);
+        const c = COLORS[selectedScore];
+        html += `
+          <div class="selected-description" style="--desc-color:${c};--desc-bg:${c}08">
+            <div class="desc-header">${opt.score} &mdash; ${opt.label}</div>
+            ${opt.description}
+          </div>
+        `;
+      }
+
+      // Guide toggle
+      html += `
+        <div class="guide-toggle ${showGuide ? 'open' : ''}" onclick="toggleGuide()">
+          <span class="arrow">&#9654;</span> View assessment guide
+        </div>
+      `;
+
+      // Guide list
+      if (showGuide) {
+        html += '<div class="guide-list">';
+        for (const opt of OPTIONS) {
+          const active = selectedScore === opt.score;
+          const c = COLORS[opt.score];
+          html += `
+            <div class="guide-row ${active ? 'active' : ''}"
+                 style="${active ? `--row-bg:${c}10` : ''}"
+                 onclick="select(${opt.score})">
+              <div class="badge" style="background:${c}">${opt.score}</div>
+              <div class="guide-text">
+                <span class="guide-label">${opt.label}</span>
+                <span class="guide-desc">${opt.description}</span>
+              </div>
+            </div>
+          `;
+        }
+        html += '</div>';
+      }
+
+      app.innerHTML = html;
+    }
+
+    function select(score) {
+      selectedScore = score;
+      render();
+    }
+
+    function toggleGuide() {
+      showGuide = !showGuide;
+      render();
+    }
+
+    render();
+  </script>
+</body>
+</html>

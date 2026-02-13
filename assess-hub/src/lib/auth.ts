@@ -5,57 +5,74 @@ import GoogleProvider from 'next-auth/providers/google'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { prisma } from './prisma'
 
+// Build providers array conditionally based on available env vars
+const providers: NextAuthOptions['providers'] = []
+
+if (process.env.GITHUB_ID && process.env.GITHUB_SECRET) {
+  providers.push(
+    GitHubProvider({
+      clientId: process.env.GITHUB_ID,
+      clientSecret: process.env.GITHUB_SECRET,
+      allowDangerousEmailAccountLinking: true,
+    })
+  )
+} else if (process.env.NODE_ENV === 'production') {
+  console.warn('WARNING: GITHUB_ID/GITHUB_SECRET not set. GitHub auth disabled.')
+}
+
+if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+  providers.push(
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      allowDangerousEmailAccountLinking: true,
+    })
+  )
+} else if (process.env.NODE_ENV === 'production') {
+  console.warn('WARNING: GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET not set. Google auth disabled.')
+}
+
+// Development only - credentials provider
+if (process.env.NODE_ENV === 'development') {
+  providers.push(
+    CredentialsProvider({
+      name: 'Development',
+      credentials: {
+        email: { label: 'Email', type: 'email' },
+        role: { label: 'Role', type: 'text' },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email) return null
+
+        // Look up existing user - don't auto-create
+        const user = await prisma.user.findUnique({
+          where: { email: credentials.email },
+        })
+
+        // User must be pre-authorized and active
+        if (!user) return null
+        if (!user.isActive) return null
+
+        // Update last login
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { lastLoginAt: new Date() },
+        })
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+        }
+      },
+    })
+  )
+}
+
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as any,
-  providers: [
-    GitHubProvider({
-      clientId: process.env.GITHUB_ID!,
-      clientSecret: process.env.GITHUB_SECRET!,
-      allowDangerousEmailAccountLinking: true,
-    }),
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      allowDangerousEmailAccountLinking: true,
-    }),
-    // Development only - credentials provider
-    ...(process.env.NODE_ENV === 'development'
-      ? [
-          CredentialsProvider({
-            name: 'Development',
-            credentials: {
-              email: { label: 'Email', type: 'email' },
-              role: { label: 'Role', type: 'text' },
-            },
-            async authorize(credentials) {
-              if (!credentials?.email) return null
-
-              // Look up existing user - don't auto-create
-              const user = await prisma.user.findUnique({
-                where: { email: credentials.email },
-              })
-
-              // User must be pre-authorized and active
-              if (!user) return null
-              if (!user.isActive) return null
-
-              // Update last login
-              await prisma.user.update({
-                where: { id: user.id },
-                data: { lastLoginAt: new Date() },
-              })
-
-              return {
-                id: user.id,
-                email: user.email,
-                name: user.name,
-                role: user.role,
-              }
-            },
-          }),
-        ]
-      : []),
-  ],
+  providers,
   callbacks: {
     async signIn({ user, account, profile }) {
       // Skip for credentials provider (handled in authorize)

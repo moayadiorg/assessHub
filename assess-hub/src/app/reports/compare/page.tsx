@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import {
   Box,
@@ -58,6 +58,19 @@ interface CategoryDelta {
 }
 
 export default function CompareReportPage() {
+  return (
+    <Suspense fallback={
+      <Box>
+        <Header title="Comparison Report" />
+        <Box p="6"><Text>Loading comparison...</Text></Box>
+      </Box>
+    }>
+      <CompareReportContent />
+    </Suspense>
+  )
+}
+
+function CompareReportContent() {
   const searchParams = useSearchParams()
   const a1 = searchParams.get('a1')
   const a2 = searchParams.get('a2')

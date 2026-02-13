@@ -1,0 +1,39 @@
+services:
+  assess-hub:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: assess-hub
+    restart: unless-stopped
+    ports:
+      - "3005:3000"
+    environment:
+      - DATABASE_URL=file:/app/data/assess-hub.db
+      - NEXTAUTH_URL=${NEXTAUTH_URL:?NEXTAUTH_URL is required - set to your externally reachable URL}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:?NEXTAUTH_SECRET is required}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+      - GITHUB_ID=${GITHUB_ID:-}
+      - GITHUB_SECRET=${GITHUB_SECRET:-}
+    volumes:
+      - assess-hub-data:/app/data
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/health | grep -q '\"status\":\"ok\"' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  assess-hub-data:
+    driver: local
