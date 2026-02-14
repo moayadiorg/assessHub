@@ -263,14 +263,21 @@ export default function AssessmentFormPage() {
             {activeCategory && (
               <>
                 <Box mb="6">
-                  <Text size="6" weight="bold">
+                  <Text size="6" weight="bold" className="font-heading" style={{ display: 'block' }}>
                     {activeCategory.name}
                   </Text>
                   {activeCategory.description && (
-                    <Text size="3" color="gray" mt="2">
+                    <Text size="3" color="gray" mt="2" style={{ display: 'block' }}>
                       {activeCategory.description}
                     </Text>
                   )}
+                  <Box
+                    mt="4"
+                    style={{
+                      height: '1px',
+                      backgroundColor: 'var(--gray-4)',
+                    }}
+                  />
                 </Box>
 
                 <Flex direction="column" gap="4">

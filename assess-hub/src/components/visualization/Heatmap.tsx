@@ -41,9 +41,9 @@ export function Heatmap({ categoryScores }: HeatmapProps) {
                 <Tooltip key={q.questionId} content={`Q${idx + 1}: ${q.questionText}`}>
                   <Box
                     style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: 4,
+                      width: 32,
+                      height: 32,
+                      borderRadius: 6,
                       backgroundColor: q.score
                         ? getHeatmapColor(q.score)
                         : 'var(--gray-4)',
@@ -51,9 +51,16 @@ export function Heatmap({ categoryScores }: HeatmapProps) {
                       alignItems: 'center',
                       justifyContent: 'center',
                       color: q.score && q.score >= 3 ? 'white' : 'var(--gray-11)',
-                      fontSize: 12,
+                      fontSize: 13,
                       fontWeight: 'bold',
                       cursor: 'pointer',
+                      transition: 'transform 0.15s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'scale(1.1)'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'scale(1)'
                     }}
                   >
                     {q.score || '-'}
@@ -66,9 +73,9 @@ export function Heatmap({ categoryScores }: HeatmapProps) {
                   <Box
                     key={`empty-${i}`}
                     style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: 4,
+                      width: 32,
+                      height: 32,
+                      borderRadius: 6,
                       backgroundColor: 'var(--gray-2)',
                     }}
                   />
@@ -88,7 +95,7 @@ export function Heatmap({ categoryScores }: HeatmapProps) {
               style={{
                 width: 16,
                 height: 16,
-                borderRadius: 3,
+                borderRadius: 4,
                 backgroundColor: getHeatmapColor(score),
               }}
             />

@@ -41,6 +41,13 @@ interface DashboardStats {
   }>
 }
 
+const statCardConfig = [
+  { key: 'total', color: '#3b82f6', bgColor: 'rgba(59, 130, 246, 0.1)' },
+  { key: 'completed', color: '#22c55e', bgColor: 'rgba(34, 197, 94, 0.1)' },
+  { key: 'inProgress', color: '#f59e0b', bgColor: 'rgba(245, 158, 11, 0.1)' },
+  { key: 'avgScore', color: '#8b5cf6', bgColor: 'rgba(139, 92, 246, 0.1)' },
+]
+
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
@@ -96,6 +103,9 @@ export default function DashboardPage() {
                 value={stats.totalAssessments.toString()}
                 change={`${stats.byStatus.draft} draft, ${stats.byStatus.inProgress} in progress`}
                 icon={<FileTextIcon width={20} height={20} />}
+                accentColor={statCardConfig[0].color}
+                iconBgColor={statCardConfig[0].bgColor}
+                delay={1}
               />
               <StatCard
                 label="Completed"
@@ -107,12 +117,18 @@ export default function DashboardPage() {
                 }
                 positive={stats.byStatus.completed > 0}
                 icon={<CheckCircledIcon width={20} height={20} />}
+                accentColor={statCardConfig[1].color}
+                iconBgColor={statCardConfig[1].bgColor}
+                delay={2}
               />
               <StatCard
                 label="In Progress"
                 value={stats.byStatus.inProgress.toString()}
                 change={`${stats.byStatus.draft} awaiting start`}
                 icon={<ReloadIcon width={20} height={20} />}
+                accentColor={statCardConfig[2].color}
+                iconBgColor={statCardConfig[2].bgColor}
+                delay={3}
               />
               <StatCard
                 label="Avg. Maturity Score"
@@ -120,15 +136,18 @@ export default function DashboardPage() {
                 change={`Across ${stats.byType.length} assessment types`}
                 positive
                 icon={<BarChartIcon width={20} height={20} />}
+                accentColor={statCardConfig[3].color}
+                iconBgColor={statCardConfig[3].bgColor}
+                delay={4}
               />
             </>
           ) : null}
         </Grid>
 
         {/* Recent Assessments */}
-        <Card mb="6">
+        <Card className="animate-in animate-in-delay-5" mb="6">
           <Flex justify="between" align="center" mb="4">
-            <Text size="4" weight="bold">Recent Assessments</Text>
+            <Text size="4" weight="bold" className="font-heading">Recent Assessments</Text>
             <Button variant="ghost" asChild>
               <Link href="/assessments">
                 View All
@@ -190,8 +209,8 @@ export default function DashboardPage() {
 
         {/* Quick Actions & Activity */}
         <Grid columns={{ initial: '1', md: '2' }} gap="6">
-          <Card>
-            <Text size="4" weight="bold" mb="4">Quick Actions</Text>
+          <Card className="animate-in animate-in-delay-6">
+            <Text size="4" weight="bold" className="font-heading" mb="4">Quick Actions</Text>
             <Flex direction="column" gap="3">
               <Button variant="outline" asChild style={{ justifyContent: 'flex-start' }}>
                 <Link href="/assessments/new">
@@ -220,8 +239,8 @@ export default function DashboardPage() {
             </Flex>
           </Card>
 
-          <Card>
-            <Text size="4" weight="bold" mb="4">Recent Activity</Text>
+          <Card className="animate-in animate-in-delay-6">
+            <Text size="4" weight="bold" className="font-heading" mb="4">Recent Activity</Text>
             <Flex direction="column" gap="4">
               <ActivityItem
                 initials="JD"
@@ -317,17 +336,46 @@ interface StatCardProps {
   change: string
   positive?: boolean
   icon: React.ReactNode
+  accentColor: string
+  iconBgColor: string
+  delay: number
 }
 
-function StatCard({ label, value, change, positive, icon }: StatCardProps) {
+function StatCard({ label, value, change, positive, icon, accentColor, iconBgColor, delay }: StatCardProps) {
   return (
-    <Card>
-      <Flex justify="between" align="start" mb="2">
+    <Card
+      className={`animate-in animate-in-delay-${delay}`}
+      style={{
+        borderLeft: `4px solid ${accentColor}`,
+        overflow: 'hidden',
+      }}
+    >
+      <Flex justify="between" align="start" mb="3">
         <Text size="2" color="gray">{label}</Text>
-        <Box style={{ color: 'var(--gray-9)' }}>{icon}</Box>
+        <Box
+          style={{
+            color: accentColor,
+            backgroundColor: iconBgColor,
+            width: '36px',
+            height: '36px',
+            borderRadius: '10px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          {icon}
+        </Box>
       </Flex>
-      <Text size="7" weight="bold">{value}</Text>
-      <Text size="2" color={positive ? 'green' : 'gray'} mt="2">
+      <Text
+        size="8"
+        weight="bold"
+        className="font-heading"
+        style={{ display: 'block', lineHeight: 1.1 }}
+      >
+        {value}
+      </Text>
+      <Text size="2" color={positive ? 'green' : 'gray'} mt="2" style={{ display: 'block' }}>
         {change}
       </Text>
     </Card>
@@ -339,7 +387,7 @@ function StatCardSkeleton() {
     <Card>
       <Flex justify="between" align="start" mb="2">
         <Skeleton width="80px" height="16px" />
-        <Skeleton width="20px" height="20px" />
+        <Skeleton width="36px" height="36px" style={{ borderRadius: '10px' }} />
       </Flex>
       <Skeleton width="60px" height="32px" mb="2" />
       <Skeleton width="120px" height="16px" />

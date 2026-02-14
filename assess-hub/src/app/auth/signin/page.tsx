@@ -2,7 +2,8 @@
 
 import { signIn, getProviders } from 'next-auth/react'
 import { useEffect, useState } from 'react'
-import { Box, Card, Flex, Text, Button, TextField } from '@radix-ui/themes'
+import { Box, Card, Flex, Text, Button, TextField, Select } from '@radix-ui/themes'
+import { LayersIcon } from '@radix-ui/react-icons'
 
 export default function SignInPage() {
   const [providers, setProviders] = useState<any>(null)
@@ -15,21 +16,40 @@ export default function SignInPage() {
 
   return (
     <Box
+      className="dot-grid-bg"
       style={{
         minHeight: '100vh',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'var(--gray-2)',
       }}
     >
-      <Card style={{ width: 400, padding: 32 }}>
-        <Text size="6" weight="bold" mb="2" style={{ display: 'block', textAlign: 'center' }}>
-          Sign In
-        </Text>
-        <Text size="2" color="gray" mb="6" style={{ display: 'block', textAlign: 'center' }}>
-          Sign in to access the assessment platform
-        </Text>
+      <Card style={{ width: 400, padding: 32, borderTop: '4px solid #3b82f6' }}>
+        {/* Logo */}
+        <Flex direction="column" align="center" mb="4">
+          <Box
+            style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '12px',
+              background: 'linear-gradient(135deg, #3b82f6, #6366f1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              marginBottom: '12px',
+              boxShadow: '0 0 20px rgba(99, 102, 241, 0.3)',
+            }}
+          >
+            <LayersIcon width={24} height={24} />
+          </Box>
+          <Text size="6" weight="bold" className="font-heading" style={{ display: 'block', textAlign: 'center' }}>
+            Sign In
+          </Text>
+          <Text size="2" color="gray" mt="1" style={{ display: 'block', textAlign: 'center' }}>
+            Sign in to access the assessment platform
+          </Text>
+        </Flex>
 
         <Flex direction="column" gap="3">
           {providers?.github && (
@@ -94,19 +114,14 @@ export default function SignInPage() {
                 onChange={(e) => setDevEmail(e.target.value)}
               />
 
-              <select
-                value={devRole}
-                onChange={(e) => setDevRole(e.target.value)}
-                style={{
-                  padding: '8px 12px',
-                  borderRadius: 6,
-                  border: '1px solid var(--gray-6)',
-                }}
-              >
-                <option value="admin">Administrator</option>
-                <option value="sa">Solution Architect</option>
-                <option value="reader">Reader</option>
-              </select>
+              <Select.Root value={devRole} onValueChange={setDevRole}>
+                <Select.Trigger style={{ width: '100%' }} />
+                <Select.Content>
+                  <Select.Item value="admin">Administrator</Select.Item>
+                  <Select.Item value="sa">Solution Architect</Select.Item>
+                  <Select.Item value="reader">Reader</Select.Item>
+                </Select.Content>
+              </Select.Root>
 
               <Button
                 size="3"

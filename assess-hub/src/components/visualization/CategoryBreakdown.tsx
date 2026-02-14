@@ -62,7 +62,7 @@ export function CategoryBreakdown({ categoryScores }: CategoryBreakdownProps) {
               onClick={() => toggleCategory(category.categoryId)}
             >
               {isExpanded ? <ChevronDownIcon /> : <ChevronRightIcon />}
-              <Text weight="bold" style={{ flex: 1 }}>
+              <Text weight="bold" className="font-heading" style={{ flex: 1 }}>
                 {category.categoryName}
               </Text>
               <Flex align="center" gap="3" style={{ minWidth: 200 }}>

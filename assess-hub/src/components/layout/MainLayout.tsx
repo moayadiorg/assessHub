@@ -15,11 +15,11 @@ export function MainLayout({ children }: MainLayoutProps) {
     <Flex style={{ minHeight: '100vh' }}>
       <Sidebar />
       <Box
+        className="dot-grid-bg"
         style={{
           flex: 1,
           marginLeft: sidebarCollapsed ? '64px' : '280px',
           transition: 'margin-left 0.2s ease',
-          backgroundColor: 'var(--gray-2)',
           minHeight: '100vh',
         }}
       >

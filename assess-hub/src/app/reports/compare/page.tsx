@@ -174,13 +174,13 @@ function CompareReportContent() {
         {/* Report Content */}
         <Box id="comparison-report">
           {/* Header */}
-          <Card mb="6">
+          <Card mb="6" style={{ borderTop: '4px solid var(--accent-9)' }}>
             <Flex justify="center" align="center" gap="2" mb="4">
               <Badge size="2" variant="soft">
                 {report.assessmentType.name}
               </Badge>
             </Flex>
-            <Heading size="5" align="center">Assessment Comparison</Heading>
+            <Heading size="5" align="center" className="font-heading">Assessment Comparison</Heading>
           </Card>
 
           {/* Assessment Headers */}
@@ -203,7 +203,7 @@ function CompareReportContent() {
           <Card mb="6">
             <Flex justify="center" align="center" gap="4">
               <Box style={{ textAlign: 'center' }}>
-                <Text size="7" weight="bold" color="blue">
+                <Text size="7" weight="bold" color="blue" className="font-heading">
                   {report.assessment1.overallScore.toFixed(1)}
                 </Text>
                 <Text size="2" color="gray" style={{ display: 'block' }}>
@@ -225,7 +225,7 @@ function CompareReportContent() {
               </Box>
 
               <Box style={{ textAlign: 'center' }}>
-                <Text size="7" weight="bold" color="green">
+                <Text size="7" weight="bold" color="green" className="font-heading">
                   {report.assessment2.overallScore.toFixed(1)}
                 </Text>
                 <Text size="2" color="gray" style={{ display: 'block' }}>
@@ -237,7 +237,7 @@ function CompareReportContent() {
 
           {/* Spider Chart */}
           <Card mb="6">
-            <Text size="4" weight="bold" mb="4">Category Comparison</Text>
+            <Text size="4" weight="bold" className="font-heading" mb="4">Category Comparison</Text>
             <ComparisonSpiderChart
               data1={report.assessment1.categoryScores}
               data2={report.assessment2.categoryScores}
@@ -248,7 +248,7 @@ function CompareReportContent() {
 
           {/* Comparison Table */}
           <Card>
-            <Text size="4" weight="bold" mb="4">Detailed Comparison</Text>
+            <Text size="4" weight="bold" className="font-heading" mb="4">Detailed Comparison</Text>
             <ComparisonTable
               categoryDeltas={report.comparison.categoryDeltas}
               assessment1Name={report.assessment1.name}

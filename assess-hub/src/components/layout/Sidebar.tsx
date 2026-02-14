@@ -13,7 +13,7 @@ import {
   LayersIcon,
   PersonIcon,
 } from '@radix-ui/react-icons'
-import { Box, Flex, Text, IconButton, Separator } from '@radix-ui/themes'
+import { Box, Flex, Text, IconButton } from '@radix-ui/themes'
 
 interface NavItem {
   href: string
@@ -53,8 +53,7 @@ export function Sidebar() {
         left: 0,
         top: 0,
         zIndex: 100,
-        borderRight: '1px solid var(--gray-5)',
-        backgroundColor: 'var(--color-background)',
+        background: 'linear-gradient(180deg, #0f172a 0%, #1e293b 100%)',
         transition: 'width 0.2s ease, min-width 0.2s ease',
         overflow: 'hidden',
       }}
@@ -67,7 +66,7 @@ export function Sidebar() {
           px="4"
           style={{
             height: '64px',
-            borderBottom: '1px solid var(--gray-5)',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
           }}
         >
           <Flex align="center" gap="3">
@@ -76,17 +75,23 @@ export function Sidebar() {
                 width: '32px',
                 height: '32px',
                 borderRadius: '8px',
-                background: 'var(--accent-9)',
+                background: 'linear-gradient(135deg, #3b82f6, #6366f1)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: 'white',
+                boxShadow: '0 0 16px rgba(99, 102, 241, 0.4)',
               }}
             >
               <LayersIcon width={18} height={18} />
             </Box>
             {!sidebarCollapsed && (
-              <Text size="4" weight="bold" style={{ color: 'var(--accent-9)' }}>
+              <Text
+                size="4"
+                weight="bold"
+                className="font-heading"
+                style={{ color: 'white' }}
+              >
                 AssessHub
               </Text>
             )}
@@ -98,6 +103,7 @@ export function Sidebar() {
             style={{
               transform: sidebarCollapsed ? 'rotate(180deg)' : 'none',
               transition: 'transform 0.2s ease',
+              color: 'rgba(255, 255, 255, 0.6)',
             }}
           >
             <ChevronLeftIcon width={18} height={18} />
@@ -108,7 +114,14 @@ export function Sidebar() {
         <Box py="4" px="2" style={{ overflowY: 'auto', height: 'calc(100vh - 64px)' }}>
           <NavSection title="Main" items={mainNavItems} collapsed={sidebarCollapsed} isActive={isActive} />
 
-          <Separator size="4" my="4" />
+          <Box
+            my="4"
+            mx="3"
+            style={{
+              height: '1px',
+              backgroundColor: 'rgba(255, 255, 255, 0.08)',
+            }}
+          />
 
           <NavSection title="Administration" items={adminNavItems} collapsed={sidebarCollapsed} isActive={isActive} />
         </Box>
@@ -133,9 +146,10 @@ function NavSection({ title, items, collapsed, isActive }: NavSectionProps) {
           weight="medium"
           style={{
             textTransform: 'uppercase',
-            letterSpacing: '0.05em',
-            color: 'var(--gray-10)',
+            letterSpacing: '0.08em',
+            color: 'rgba(255, 255, 255, 0.4)',
             padding: '8px 12px',
+            fontSize: '11px',
           }}
         >
           {title}
@@ -165,13 +179,26 @@ function NavLink({ item, active, collapsed }: NavLinkProps) {
         style={{
           borderRadius: '8px',
           marginBottom: '2px',
-          backgroundColor: active ? 'var(--accent-3)' : 'transparent',
-          color: active ? 'var(--accent-11)' : 'var(--gray-11)',
+          position: 'relative',
+          backgroundColor: active ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+          color: active ? '#ffffff' : 'rgba(255, 255, 255, 0.6)',
           cursor: 'pointer',
           justifyContent: collapsed ? 'center' : 'flex-start',
-          transition: 'background-color 0.15s ease',
+          transition: 'background-color 0.15s ease, color 0.15s ease',
+          borderLeft: active ? '3px solid #3b82f6' : '3px solid transparent',
         }}
-        className="hover:bg-[var(--gray-3)]"
+        onMouseEnter={(e) => {
+          if (!active) {
+            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)'
+            e.currentTarget.style.color = 'rgba(255, 255, 255, 0.9)'
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!active) {
+            e.currentTarget.style.backgroundColor = 'transparent'
+            e.currentTarget.style.color = 'rgba(255, 255, 255, 0.6)'
+          }
+        }}
       >
         <Box style={{ flexShrink: 0 }}>{item.icon}</Box>
         {!collapsed && (

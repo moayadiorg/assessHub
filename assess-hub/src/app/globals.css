@@ -3,6 +3,8 @@
 :root {
   --background: #f8f9fa;
   --foreground: #1a1a1a;
+  --font-heading: var(--font-dm-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-body: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 @theme inline {
@@ -14,7 +16,19 @@
 body {
   background: var(--gray-2);
   color: var(--foreground);
-  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: var(--font-body);
+}
+
+/* Dot grid background pattern on main content area */
+.dot-grid-bg {
+  background-color: var(--gray-2);
+  background-image: radial-gradient(circle, var(--gray-5) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Heading font utility */
+.font-heading {
+  font-family: var(--font-heading);
 }
 
 /* Score colors for maturity levels */
@@ -33,13 +47,38 @@ body {
 
 /* Card hover effect */
 .card-hover {
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
 }
 
 .card-hover:hover {
   border-color: var(--accent-7);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
 }
+
+/* Staggered fade-in animation */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-in {
+  animation: fadeInUp 0.4s ease-out forwards;
+  opacity: 0;
+}
+
+.animate-in-delay-1 { animation-delay: 0.05s; }
+.animate-in-delay-2 { animation-delay: 0.1s; }
+.animate-in-delay-3 { animation-delay: 0.15s; }
+.animate-in-delay-4 { animation-delay: 0.2s; }
+.animate-in-delay-5 { animation-delay: 0.25s; }
+.animate-in-delay-6 { animation-delay: 0.3s; }
 
 /* Print styles */
 @media print {
@@ -54,17 +93,17 @@ body {
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--gray-3);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--gray-7);
-  border-radius: 4px;
+  background: var(--gray-6);
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -73,7 +112,7 @@ body {
 
 /* Radix UI Theme overrides */
 .radix-themes {
-  --default-font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --default-font-family: var(--font-body);
 }
 
 /* Transition utilities */

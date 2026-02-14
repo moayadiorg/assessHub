@@ -114,7 +114,7 @@ export default function ResultsPage() {
                 <ArrowLeftIcon /> Back to Assessments
               </Link>
             </Button>
-            <Text size="6" weight="bold" style={{ display: 'block' }}>
+            <Text size="6" weight="bold" className="font-heading" style={{ display: 'block' }}>
               {results.assessmentName}
             </Text>
             <Text size="3" color="gray">
@@ -140,7 +140,7 @@ export default function ResultsPage() {
         <Grid columns={{ initial: '1', lg: '2' }} gap="6" mt="6">
           {/* Spider Chart */}
           <Card>
-            <Text size="4" weight="bold" mb="4">
+            <Text size="4" weight="bold" className="font-heading" mb="4">
               Category Scores
             </Text>
             <SpiderChart categoryScores={results.categoryScores} />
@@ -148,7 +148,7 @@ export default function ResultsPage() {
 
           {/* Heatmap */}
           <Card>
-            <Text size="4" weight="bold" mb="4">
+            <Text size="4" weight="bold" className="font-heading" mb="4">
               Question Heatmap
             </Text>
             <Heatmap categoryScores={results.categoryScores} />

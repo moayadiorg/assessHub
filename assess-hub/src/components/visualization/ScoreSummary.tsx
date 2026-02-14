@@ -32,12 +32,17 @@ export function ScoreSummary({ results }: ScoreSummaryProps) {
   return (
     <Grid columns={{ initial: '1', sm: '2', lg: '4' }} gap="4">
       {/* Overall Score */}
-      <Card>
+      <Card style={{ borderTop: `4px solid ${getScoreColor(results.overallScore)}` }}>
         <Text size="2" color="gray" mb="2" style={{ display: 'block' }}>
           Overall Maturity Score
         </Text>
         <Flex align="baseline" gap="2">
-          <Text size="8" weight="bold" style={{ color: getScoreColor(results.overallScore) }}>
+          <Text
+            size="8"
+            weight="bold"
+            className="font-heading"
+            style={{ color: getScoreColor(results.overallScore) }}
+          >
             {results.overallScore.toFixed(1)}
           </Text>
           <Text size="4" color="gray">/ 5</Text>
@@ -48,11 +53,11 @@ export function ScoreSummary({ results }: ScoreSummaryProps) {
       </Card>
 
       {/* Completion */}
-      <Card>
+      <Card style={{ borderTop: '4px solid var(--blue-9)' }}>
         <Text size="2" color="gray" mb="2" style={{ display: 'block' }}>
           Completion
         </Text>
-        <Text size="8" weight="bold">
+        <Text size="8" weight="bold" className="font-heading">
           {Math.round((results.answeredQuestions / results.totalQuestions) * 100)}%
         </Text>
         <Text size="2" color="gray" mt="2" style={{ display: 'block' }}>
@@ -61,11 +66,11 @@ export function ScoreSummary({ results }: ScoreSummaryProps) {
       </Card>
 
       {/* Highest Category */}
-      <Card>
+      <Card style={{ borderTop: '4px solid var(--green-9)' }}>
         <Text size="2" color="gray" mb="2" style={{ display: 'block' }}>
           Strongest Area
         </Text>
-        <Text size="5" weight="bold" style={{ color: 'var(--green-11)' }}>
+        <Text size="5" weight="bold" className="font-heading" style={{ color: 'var(--green-11)', display: 'block' }}>
           {highestCategory.categoryName}
         </Text>
         <Text size="4" color="gray" mt="1" style={{ display: 'block' }}>
@@ -74,11 +79,11 @@ export function ScoreSummary({ results }: ScoreSummaryProps) {
       </Card>
 
       {/* Lowest Category */}
-      <Card>
+      <Card style={{ borderTop: '4px solid var(--red-9)' }}>
         <Text size="2" color="gray" mb="2" style={{ display: 'block' }}>
           Area for Improvement
         </Text>
-        <Text size="5" weight="bold" style={{ color: 'var(--red-11)' }}>
+        <Text size="5" weight="bold" className="font-heading" style={{ color: 'var(--red-11)', display: 'block' }}>
           {lowestCategory.categoryName}
         </Text>
         <Text size="4" color="gray" mt="1" style={{ display: 'block' }}>

@@ -22,18 +22,25 @@ interface AssessmentTypeCardProps {
 
 export function AssessmentTypeCard({ type, onDelete }: AssessmentTypeCardProps) {
   return (
-    <Card>
+    <Card
+      className="card-hover"
+      style={{
+        borderTop: `4px solid ${type.iconColor}`,
+        cursor: 'default',
+      }}
+    >
       <Flex justify="between" align="start" mb="3">
-        <Flex gap="2" align="center">
+        <Flex gap="3" align="center">
           <Box
             style={{
-              width: 12,
-              height: 12,
+              width: 24,
+              height: 24,
               borderRadius: '50%',
               backgroundColor: type.iconColor,
+              flexShrink: 0,
             }}
           />
-          <Text size="4" weight="bold">{type.name}</Text>
+          <Text size="4" weight="bold" className="font-heading">{type.name}</Text>
         </Flex>
         <DropdownMenu.Root>
           <DropdownMenu.Trigger>
@@ -66,18 +73,18 @@ export function AssessmentTypeCard({ type, onDelete }: AssessmentTypeCardProps) 
         </Text>
       )}
 
-      <Flex gap="2" mb="3">
-        <Badge variant="soft">v{type.version}</Badge>
+      <Flex gap="2" mb="3" align="center">
+        <Badge variant="outline">v{type.version}</Badge>
         {!type.isActive && <Badge color="red">Inactive</Badge>}
       </Flex>
 
-      <Flex gap="4">
-        <Text size="2" color="gray">
+      <Flex gap="2">
+        <Badge variant="soft" color="gray">
           {type._count.categories} categories
-        </Text>
-        <Text size="2" color="gray">
+        </Badge>
+        <Badge variant="soft" color="gray">
           {type._count.assessments} assessments
-        </Text>
+        </Badge>
       </Flex>
     </Card>
   )

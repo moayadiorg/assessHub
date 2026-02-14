@@ -179,10 +179,23 @@ export default function ReportsPage() {
       <Box p="6">
         <Grid columns={{ initial: '1', lg: '2' }} gap="6" mb="6">
           {/* Customer Reports Card */}
-          <Card>
-            <Flex align="center" gap="2" mb="4">
-              <BarChartIcon width={20} height={20} />
-              <Text size="4" weight="bold">Customer Reports</Text>
+          <Card className="animate-in animate-in-delay-1" style={{ borderTop: '4px solid var(--blue-9)' }}>
+            <Flex align="center" gap="3" mb="4">
+              <Box
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 10,
+                  backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                  color: 'var(--blue-9)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <BarChartIcon width={20} height={20} />
+              </Box>
+              <Text size="4" weight="bold" className="font-heading">Customer Reports</Text>
             </Flex>
             <Text size="2" color="gray" mb="4" style={{ display: 'block' }}>
               View aggregated assessment data and trends for a specific customer.
@@ -227,10 +240,23 @@ export default function ReportsPage() {
           </Card>
 
           {/* Comparison Reports Card */}
-          <Card>
-            <Flex align="center" gap="2" mb="4">
-              <BarChartIcon width={20} height={20} />
-              <Text size="4" weight="bold">Comparison Reports</Text>
+          <Card className="animate-in animate-in-delay-2" style={{ borderTop: '4px solid var(--green-9)' }}>
+            <Flex align="center" gap="3" mb="4">
+              <Box
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 10,
+                  backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                  color: 'var(--green-9)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <BarChartIcon width={20} height={20} />
+              </Box>
+              <Text size="4" weight="bold" className="font-heading">Comparison Reports</Text>
             </Flex>
             <Text size="2" color="gray" mb="4" style={{ display: 'block' }}>
               Compare two assessments side-by-side with overlaid visualizations.

@@ -17,8 +17,9 @@ export function Header({ title, showNewAssessment = true, children }: HeaderProp
       asChild
       style={{
         height: '64px',
-        borderBottom: '1px solid var(--gray-5)',
+        borderBottom: '1px solid var(--gray-4)',
         backgroundColor: 'var(--color-background)',
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
         position: 'sticky',
         top: 0,
         zIndex: 50,
@@ -26,7 +27,7 @@ export function Header({ title, showNewAssessment = true, children }: HeaderProp
     >
       <header>
         <Flex align="center" justify="between" px="6" style={{ height: '100%' }}>
-          <Text size="5" weight="bold">
+          <Text size="5" weight="bold" className="font-heading">
             {title}
           </Text>
 

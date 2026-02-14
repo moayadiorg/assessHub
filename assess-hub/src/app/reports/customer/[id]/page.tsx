@@ -149,8 +149,8 @@ export default function CustomerReportPage({
         {/* Report Content */}
         <Box id="customer-report">
           {/* Customer Header */}
-          <Card mb="6">
-            <Heading size="6" mb="2">{report.customer.name}</Heading>
+          <Card mb="6" style={{ borderTop: '4px solid var(--accent-9)' }}>
+            <Heading size="6" mb="2" className="font-heading">{report.customer.name}</Heading>
             <Flex gap="6">
               <Box>
                 <Text size="6" weight="bold">{report.totalAssessments}</Text>
@@ -278,13 +278,10 @@ function TrendIndicator({ trend }: { trend: { direction: string; change: number 
 
   return (
     <Flex align="center" gap="2">
-      <Badge color={config.color as any} variant="soft">
-        <Icon width={12} height={12} />
-        {config.label}
+      <Badge size="2" color={config.color as any} variant="soft" style={{ padding: '4px 12px' }}>
+        <Icon width={14} height={14} />
+        {config.label} {trend.change > 0 ? '+' : ''}{trend.change.toFixed(1)}
       </Badge>
-      <Text size="2" color={config.color as any}>
-        {trend.change > 0 ? '+' : ''}{trend.change.toFixed(1)}
-      </Text>
     </Flex>
   )
 }
