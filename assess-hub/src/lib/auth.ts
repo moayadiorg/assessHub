@@ -34,7 +34,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
 }
 
 // Development only - credentials provider
-if (process.env.NODE_ENV === 'development') {
+if (process.env.ENABLE_DEV_AUTH === 'true') {
   providers.push(
     CredentialsProvider({
       name: 'Development',

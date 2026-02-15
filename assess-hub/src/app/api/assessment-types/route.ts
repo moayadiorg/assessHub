@@ -39,7 +39,7 @@ export async function GET(request: Request) {
 
     const types = await query<AssessmentTypeRow>(sql, [])
 
-    // Map to Prisma-compatible response format
+    // Map to API response format
     const response = types.map(type => ({
       id: type.id,
       name: type.name,

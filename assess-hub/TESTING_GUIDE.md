@@ -263,22 +263,6 @@ curl -X DELETE http://localhost:3005/api/assessment-types/{id}
 
 ---
 
-## Database Verification
-
-You can verify the data using Prisma Studio:
-
-```bash
-npx prisma studio
-```
-
-This opens a GUI at http://localhost:5555 where you can:
-- View all assessment types
-- Check isActive status
-- Verify iconColor values
-- See relationships with categories and assessments
-
----
-
 ## Browser DevTools Checklist
 
 While testing, check for:

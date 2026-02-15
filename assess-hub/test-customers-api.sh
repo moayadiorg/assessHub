@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Customer API Test Script
-# Run after: npx prisma migrate dev --name add_customer_model
+# Run after: npm run db:reset
 # Start dev server: npm run dev
 
 BASE_URL="http://localhost:3000"

@@ -14,6 +14,9 @@ FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
+# Dummy DATABASE_URL so Next.js build can parse the URL at module load time.
+# The real value is provided at runtime via docker-compose environment.
+ENV DATABASE_URL=mysql://user:pass@localhost:3306/db
 RUN npm run build
 
 # ---- Production ----
@@ -32,7 +35,8 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
 # Migration SQL for schema initialization
-COPY --from=builder /app/prisma/migrations/20260213103324_init/migration.sql ./migration.sql
+COPY --from=builder /app/db/schema.sql ./migration.sql
+COPY --from=builder /app/db/seed.sql ./seed.sql
 
 COPY docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh && \

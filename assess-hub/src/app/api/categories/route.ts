@@ -31,7 +31,7 @@ export async function GET(request: Request) {
     [typeId]
   )
 
-  // Remap to match Prisma response shape with _count
+  // Remap to API response shape with _count
   const categories = rows.map(row => ({
     id: row.id,
     assessmentTypeId: row.assessmentTypeId,

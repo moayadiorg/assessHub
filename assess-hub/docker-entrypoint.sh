@@ -19,9 +19,9 @@ DB_NAME=$(echo "$DATABASE_URL" | sed -E 's|mysql://[^/]+/([^?]+).*|\1|')
 echo "Running database migration (idempotent)..."
 # Use CREATE TABLE IF NOT EXISTS approach - the migration SQL uses CREATE TABLE
 # which will error if tables exist, so we check first
-if ! mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" -e "SELECT 1 FROM AssessmentType LIMIT 1" 2>/dev/null; then
+if ! mysql --skip-ssl -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" -e "SELECT 1 FROM AssessmentType LIMIT 1" 2>/dev/null; then
   echo "Tables not found, applying migration..."
-  if ! mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" < ./migration.sql; then
+  if ! mysql --skip-ssl -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" < ./migration.sql; then
     echo "FATAL: Database migration failed." >&2
     exit 1
   fi
@@ -29,6 +29,13 @@ if ! mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" -e 
 else
   echo "Tables already exist, skipping migration."
 fi
+
+echo "Running database seed (idempotent)..."
+if ! mysql --skip-ssl -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" < ./seed.sql; then
+  echo "FATAL: Database seed failed." >&2
+  exit 1
+fi
+echo "Seed applied."
 
 echo "Starting application..."
 exec node server.js

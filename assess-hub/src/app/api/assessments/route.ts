@@ -58,7 +58,7 @@ export async function GET(request: Request) {
 
   const rows = await query<AssessmentRow>(sql, params)
 
-  // Transform to match Prisma shape
+  // Transform to match expected API shape
   const enriched = rows.map(row => ({
     id: row.id,
     name: row.name,

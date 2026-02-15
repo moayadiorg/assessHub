@@ -54,3 +54,5 @@ docker-compose*
 .claude
 .agents
 plans
+e2e-test*
+scripts

@@ -12,7 +12,7 @@ export function MysqlAdapter(): Adapter {
         [id, user.name ?? null, user.email, user.emailVerified ?? null, user.image ?? null]
       )
       const row = await queryOne<AdapterUser>(
-        'SELECT id, name, email, emailVerified, image FROM User WHERE id = ?',
+        'SELECT id, name, email, emailVerified, image, role FROM User WHERE id = ?',
         [id]
       )
       return row!
@@ -20,21 +20,21 @@ export function MysqlAdapter(): Adapter {
 
     async getUser(id: string) {
       return queryOne<AdapterUser>(
-        'SELECT id, name, email, emailVerified, image FROM User WHERE id = ?',
+        'SELECT id, name, email, emailVerified, image, role FROM User WHERE id = ?',
         [id]
       )
     },
 
     async getUserByEmail(email: string) {
       return queryOne<AdapterUser>(
-        'SELECT id, name, email, emailVerified, image FROM User WHERE email = ?',
+        'SELECT id, name, email, emailVerified, image, role FROM User WHERE email = ?',
         [email]
       )
     },
 
     async getUserByAccount({ providerAccountId, provider }: Pick<AdapterAccount, 'provider' | 'providerAccountId'>) {
       const row = await queryOne<AdapterUser>(
-        `SELECT u.id, u.name, u.email, u.emailVerified, u.image
+        `SELECT u.id, u.name, u.email, u.emailVerified, u.image, u.role
          FROM User u
          JOIN Account a ON a.userId = u.id
          WHERE a.provider = ? AND a.providerAccountId = ?`,
@@ -58,7 +58,7 @@ export function MysqlAdapter(): Adapter {
       }
 
       const row = await queryOne<AdapterUser>(
-        'SELECT id, name, email, emailVerified, image FROM User WHERE id = ?',
+        'SELECT id, name, email, emailVerified, image, role FROM User WHERE id = ?',
         [user.id]
       )
       return row!
@@ -113,10 +113,10 @@ export function MysqlAdapter(): Adapter {
     async getSessionAndUser(sessionToken: string) {
       const row = await queryOne<{
         sId: string; sessionToken: string; sUserId: string; expires: Date
-        uId: string; name: string | null; email: string; emailVerified: Date | null; image: string | null
+        uId: string; name: string | null; email: string; emailVerified: Date | null; image: string | null; role: string | null
       }>(
         `SELECT s.id as sId, s.sessionToken, s.userId as sUserId, s.expires,
-                u.id as uId, u.name, u.email, u.emailVerified, u.image
+                u.id as uId, u.name, u.email, u.emailVerified, u.image, u.role
          FROM Session s
          JOIN User u ON u.id = s.userId
          WHERE s.sessionToken = ?`,
@@ -137,6 +137,7 @@ export function MysqlAdapter(): Adapter {
           email: row.email,
           emailVerified: row.emailVerified,
           image: row.image,
+          role: row.role,
         } as AdapterUser,
       }
     },
