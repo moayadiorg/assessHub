@@ -1,6 +1,8 @@
+import { NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 import { query, queryOne, execute } from '@/lib/sql-helpers'
 import { newId } from '@/lib/id'
-import { NextResponse } from 'next/server'
 
 interface AssessmentTypeRow {
   id: string
@@ -22,6 +24,11 @@ interface AssessmentTypeRow {
  *   - active=true: Filter to only active types
  */
 export async function GET(request: Request) {
+  const session = await getServerSession(authOptions)
+  if (!session) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   try {
     const { searchParams } = new URL(request.url)
     const activeOnly = searchParams.get('active') === 'true'
@@ -71,6 +78,11 @@ export async function GET(request: Request) {
  * Body: { name, description?, version?, iconColor? }
  */
 export async function POST(request: Request) {
+  const session = await getServerSession(authOptions)
+  if (!session) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   try {
     const body = await request.json()
 

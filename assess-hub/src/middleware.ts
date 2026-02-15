@@ -31,8 +31,15 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    '/admin/:path*',
-    '/assessments/:path*',
-    '/reports/:path*',
+    /*
+     * Match all routes except:
+     * - /auth/* (sign-in, error pages)
+     * - /unauthorized (access denied page)
+     * - /api/auth/* (NextAuth API endpoints)
+     * - /api/health (public health check)
+     * - /_next/* (Next.js internals)
+     * - /favicon.ico, /images/*, static assets
+     */
+    '/((?!auth|unauthorized|api/auth|api/health|_next|favicon\\.ico|images).*)',
   ],
 }
