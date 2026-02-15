@@ -8,10 +8,10 @@ services:
     ports:
       - "3005:3000"
     environment:
-      - ENABLE_DEV_AUTH=true
-      - DATABASE_URL=mysql://mysql:f8Z3fTtp6C2eOuhp8O9IE03KrTJT77GMJYhdj2VWslJUjIPH8Q4NWc6LyZVdWwom@192.168.88.12:5432/default
+      - ENABLE_DEV_AUTH=${ENABLE_DEV_AUTH:-false}
+      - DATABASE_URL=${DATABASE_URL}
       - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3005}
-      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-dev-secret-not-for-production}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
       - GITHUB_ID=${GITHUB_ID:-}

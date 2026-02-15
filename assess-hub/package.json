@@ -10,7 +10,8 @@
     "db:up": "docker compose -f docker-compose.dev.yml up -d",
     "db:down": "docker compose -f docker-compose.dev.yml down",
     "db:reset": "docker compose -f docker-compose.dev.yml down -v && docker compose -f docker-compose.dev.yml up -d",
-    "db:seed": "node --env-file=.env --import tsx db/seed.ts"
+    "db:seed": "node --env-file=.env --import tsx db/seed.ts",
+    "db:init": "node --env-file=.env scripts/db-seed.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

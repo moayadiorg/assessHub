@@ -7,17 +7,23 @@ WORKDIR /app
 # ---- Dependencies ----
 FROM base AS deps
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN --mount=type=cache,target=/root/.npm npm ci
 
 # ---- Builder ----
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+
+# Copy config files needed for the build
+COPY package.json next.config.ts tsconfig.json postcss.config.mjs next-env.d.ts ./
+COPY src ./src
+COPY public ./public
+COPY db ./db
+
 ENV NEXT_TELEMETRY_DISABLED=1
 # Dummy DATABASE_URL so Next.js build can parse the URL at module load time.
 # The real value is provided at runtime via docker-compose environment.
 ENV DATABASE_URL=mysql://user:pass@localhost:3306/db
-RUN npm run build
+RUN --mount=type=cache,target=/app/.next/cache npm run build
 
 # ---- Production ----
 FROM base AS runner
@@ -27,22 +33,13 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
-# Next.js standalone output
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
+# Next.js standalone output (includes traced mysql2 via serverExternalPackages)
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# mysql2 for db-init (not traced by Next.js standalone — install with all transitive deps)
-RUN npm install --no-save mysql2
-
-# Migration SQL + Node.js init script
-COPY --from=builder /app/db/schema.sql ./migration.sql
-COPY --from=builder /app/db/seed.sql ./seed.sql
-COPY --from=builder /app/db-init.mjs ./db-init.mjs
-
-COPY docker-entrypoint.sh ./
-RUN chmod +x docker-entrypoint.sh && \
-    chown -R nextjs:nodejs /app
+COPY --chown=nextjs:nodejs docker-entrypoint.sh ./
+RUN chmod +x docker-entrypoint.sh
 
 USER nextjs
 EXPOSE 3000

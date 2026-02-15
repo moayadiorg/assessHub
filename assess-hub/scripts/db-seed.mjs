@@ -1,5 +1,9 @@
 import { createConnection } from 'mysql2/promise';
 import { readFileSync } from 'fs';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const url = process.env.DATABASE_URL;
 if (!url) {
@@ -20,16 +24,16 @@ try {
   }
 
   if (!tablesExist) {
-    console.log('Tables not found, applying migration...');
-    const migration = readFileSync('./migration.sql', 'utf8');
-    await conn.query(migration);
-    console.log('Migration applied successfully.');
+    console.log('Tables not found, applying schema...');
+    const schema = readFileSync(resolve(__dirname, '../db/schema.sql'), 'utf8');
+    await conn.query(schema);
+    console.log('Schema applied successfully.');
   } else {
-    console.log('Tables already exist, skipping migration.');
+    console.log('Tables already exist, skipping schema.');
   }
 
   console.log('Running database seed (idempotent)...');
-  const seed = readFileSync('./seed.sql', 'utf8');
+  const seed = readFileSync(resolve(__dirname, '../db/seed.sql'), 'utf8');
   await conn.query(seed);
   console.log('Seed applied.');
 } finally {
