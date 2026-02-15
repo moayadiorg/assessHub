@@ -7,12 +7,9 @@ services:
     restart: unless-stopped
     ports:
       - "3005:3000"
-    depends_on:
-      mysql:
-        condition: service_healthy
     environment:
       - ENABLE_DEV_AUTH=true
-      - DATABASE_URL=mysql://mysql:f8Z3fTtp6C2eOuhp8O9IE03KrTJT77GMJYhdj2VWslJUjIPH8Q4NWc6LyZVdWwom@jwcgwk8wsksocgsw0w44sows:3306/assess-hub
+      - DATABASE_URL=mysql://mysql:f8Z3fTtp6C2eOuhp8O9IE03KrTJT77GMJYhdj2VWslJUjIPH8Q4NWc6LyZVdWwom@192.168.88.12:5432/default
       - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3005}
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-dev-secret-not-for-production}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}

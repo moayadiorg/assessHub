@@ -24,8 +24,6 @@ FROM base AS runner
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-RUN apk add --no-cache mysql-client
-
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
@@ -34,9 +32,13 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
-# Migration SQL for schema initialization
+# mysql2 for db-init (not traced by Next.js standalone — install with all transitive deps)
+RUN npm install --no-save mysql2
+
+# Migration SQL + Node.js init script
 COPY --from=builder /app/db/schema.sql ./migration.sql
 COPY --from=builder /app/db/seed.sql ./seed.sql
+COPY --from=builder /app/db-init.mjs ./db-init.mjs
 
 COPY docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh && \
