@@ -14,7 +14,7 @@ FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 
 # Copy config files needed for the build
-COPY package.json next.config.ts tsconfig.json postcss.config.mjs next-env.d.ts ./
+COPY package.json next.config.ts tsconfig.json postcss.config.mjs ./
 COPY src ./src
 COPY public ./public
 COPY db ./db
