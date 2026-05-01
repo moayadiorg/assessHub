@@ -25,6 +25,12 @@ function iacOption(score: number, description: string) {
   return { score, label: IAC_MATURITY_LABELS[score - 1], description }
 }
 
+// ETOM uses category-specific level labels (Composite/Governed/Last-Mile/etc.)
+// instead of a fixed scale, so the label is passed in directly.
+function etomOption(score: number, label: string, description: string) {
+  return { score, label, description }
+}
+
 async function main() {
   // ── Users ──────────────────────────────────────────────────────────
   // Upsert users (User table has no updatedAt column)
@@ -815,12 +821,198 @@ async function main() {
     ]
   )
 
+  // ── Assessment Type 5: Agentic AI Security (ETOM) ──────────────────
+  const etomType = await findOrCreateType(
+    'Agentic AI Security (ETOM)',
+    'Enterprise Trust Operating Model — a 4-level maturity framework for ' +
+      'Agentic AI security across Identity, Decision, Execution, ' +
+      'Authorization, and Provenance. Some criteria correspond to features ' +
+      'available only in HashiCorp Vault Enterprise.',
+    '1.0',
+    '#8b5cf6',
+    [
+      {
+        name: 'Request (Identity)',
+        description:
+          'How identities are established and managed for agentic workloads.',
+        order: 1,
+        questions: [
+          {
+            text: 'How are identities established for AI agents and the workloads they invoke?',
+            description: 'Probes the underlying identity model for agents and any workloads they delegate to.',
+            order: 1,
+            options: [
+              etomOption(1, 'Ad Hoc', 'Agents reuse static service credentials or shared secrets; only humans have first-class identity.'),
+              etomOption(2, 'Centralized', 'Each agent has a dedicated service account in a central directory, with RBAC and scheduled credential rotation.'),
+              etomOption(3, 'Contextual', 'Distinct human and machine identities; agent identities are context-aware (env, scope, intent) and no credentials are shared.'),
+              etomOption(4, 'Composite (ETOM)', 'Composite identity is issued per request, cryptographically bound to the specific action; zero standing privilege.'),
+            ],
+          },
+          {
+            text: 'How are agent credentials issued and renewed?',
+            description: 'Probes the credential lifecycle and how long agent secrets live.',
+            order: 2,
+            options: [
+              etomOption(1, 'Static secrets', 'Long-lived secrets stored in config, environment variables, or files.'),
+              etomOption(2, 'Rotated secrets', 'Credentials live in a vault and rotate on a schedule, but remain long-lived between rotations.'),
+              etomOption(3, 'Brokered short-lived', 'Short-lived credentials are brokered at runtime and scoped to the agent\'s current context.'),
+              etomOption(4, 'Per-request ephemeral', 'Credentials are issued per request, bound to identity-and-action, and expire with the request.'),
+            ],
+          },
+          {
+            text: 'How visible and auditable are non-human identities (agents, workloads, services)?',
+            description: 'Probes whether the org can enumerate and trace its NHIs.',
+            order: 3,
+            options: [
+              etomOption(1, 'Invisible', 'No NHI inventory; existence and entitlements are undocumented.'),
+              etomOption(2, 'Catalogued', 'Service accounts are inventoried with basic activity logging.'),
+              etomOption(3, 'Action-traced', 'Full NHI inventory with action-level audit trails and intent metadata.'),
+              etomOption(4, 'Continuously verified', 'NHIs are continuously discovered, lineage-tracked, and bound to requests with verifiable proof.'),
+            ],
+          },
+        ],
+      },
+      {
+        name: 'Decision',
+        description:
+          'How agent decisions are governed, evaluated, and explained.',
+        order: 2,
+        questions: [
+          {
+            text: 'Where does AI agent decision logic live?',
+            description: 'Probes the separation between agent code and policy.',
+            order: 1,
+            options: [
+              etomOption(1, 'Embedded', 'Decision logic is hardcoded in agent code; no separation between agent and policy.'),
+              etomOption(2, 'Centralized', 'A central policy engine evaluates rules, but policies are updated manually and infrequently.'),
+              etomOption(3, 'Enforced', 'Policies are externalized and continuously enforced; risk-based decisioning is in place.'),
+              etomOption(4, 'Governed (ETOM)', 'AI logic is governed and explainable, with decision lineage tracked and policies continuously optimized.'),
+            ],
+          },
+          {
+            text: 'When are policy checks applied to agent actions?',
+            description: 'Probes the timing and continuity of policy enforcement.',
+            order: 2,
+            options: [
+              etomOption(1, 'Never', 'No policy checks; agents act on embedded logic.'),
+              etomOption(2, 'Runtime only', 'Basic rule checks at the moment of action, with limited enforcement.'),
+              etomOption(3, 'Pre-execution', 'Pre-execution policy validation with enforced separation between actor and decision.'),
+              etomOption(4, 'Continuous', 'Continuous, request-scoped policy evaluation with full decision-event lineage.'),
+            ],
+          },
+          {
+            text: 'How is each decision recorded and explained?',
+            description: 'Probes auditability and explainability of agent decisions.',
+            order: 3,
+            options: [
+              etomOption(1, 'Not recorded', 'Decisions leave no auditable trail.'),
+              etomOption(2, 'Partially logged', 'Decisions are logged but often lack actor, policy, or outcome context.'),
+              etomOption(3, 'Fully logged', 'Each decision is logged with actor, policy applied, inputs, and outcome.'),
+              etomOption(4, 'Explainable & replayable', 'Decisions carry full rationale and lineage; any decision can be replayed against the same inputs and policy.'),
+            ],
+          },
+        ],
+      },
+      {
+        name: 'Execution',
+        description:
+          'How agent actions are executed against target systems.',
+        order: 3,
+        questions: [
+          {
+            text: 'How do agents access target systems?',
+            description: 'Probes the access model — direct, brokered, or ephemeral.',
+            order: 1,
+            options: [
+              etomOption(1, 'Direct & static', 'Direct access using embedded static credentials; trust is implicit.'),
+              etomOption(2, 'Brokered', 'A pipeline or broker fronts the access; central execution paths with service-level segmentation.'),
+              etomOption(3, 'Workload-identity bound', 'Workload identity is enforced; credentials are issued dynamically with runtime least privilege.'),
+              etomOption(4, 'Request-scoped', 'Request-scoped execution in ephemeral runtime environments; identity-bound, with zero persistent access.'),
+            ],
+          },
+          {
+            text: 'What runtime controls govern what an agent can do once it is executing?',
+            description: 'Probes runtime enforcement and least-privilege posture.',
+            order: 2,
+            options: [
+              etomOption(1, 'None', 'Runtime trust is implicit; no enforcement after execution starts.'),
+              etomOption(2, 'Segmented', 'Central execution paths with basic service segmentation.'),
+              etomOption(3, 'Validated', 'Pre-execution policy validation and runtime least-privilege enforcement.'),
+              etomOption(4, 'Bound & ephemeral', 'Continuous, identity-bound, request-scoped controls in ephemeral environments.'),
+            ],
+          },
+        ],
+      },
+      {
+        name: 'Authority (Authorization)',
+        description:
+          'How agents are authorized for sensitive or privileged actions.',
+        order: 4,
+        questions: [
+          {
+            text: 'How are agents authorized for sensitive actions?',
+            description: 'Probes the timing and binding of authorization decisions.',
+            order: 1,
+            options: [
+              etomOption(1, 'Implicit standing', 'Standing privileged access; authorization is granted upstream and never reassessed at the point of action.'),
+              etomOption(2, 'Role-based', 'Role-based approval flows with manual workflows; auditing is partial; standing privilege still common.'),
+              etomOption(3, 'Point-of-use', 'Point-of-use authorization with context-based approvals and dynamic credentials; no standing privilege.'),
+              etomOption(4, 'Bound & verifiable', 'Approvals are cryptographically bound to the specific action and are replayable end-to-end.'),
+            ],
+          },
+          {
+            text: 'What entitlement model governs agent privileges over time?',
+            description: 'Probes how privileges evolve and how they are reviewed.',
+            order: 2,
+            options: [
+              etomOption(1, 'Static', 'Static entitlement models that rarely change and are not tied to context.'),
+              etomOption(2, 'Role-based, manual', 'Role-based entitlements reviewed on a manual cycle.'),
+              etomOption(3, 'Just-in-time', 'Context-aware, just-in-time entitlements with no standing access.'),
+              etomOption(4, 'Verified & boundary-separated', 'Boundary-separated, verifiably enforced controls with replayable approval lineage.'),
+            ],
+          },
+        ],
+      },
+      {
+        name: 'Provenance',
+        description:
+          'How agent activity is observed, correlated, and replayed.',
+        order: 5,
+        questions: [
+          {
+            text: 'How are agent actions logged and aggregated?',
+            description: 'Probes log aggregation, correlation, and tamper-evidence.',
+            order: 1,
+            options: [
+              etomOption(1, 'Siloed', 'Logs sit in each system; no event correlation; retention is short or inconsistent.'),
+              etomOption(2, 'Aggregated', 'Centralized log aggregation in standardized formats with basic event correlation.'),
+              etomOption(3, 'Correlated', 'End-to-end event correlation with context-rich, audit-ready logs in near real time.'),
+              etomOption(4, 'Replayable & tamper-evident', 'Tamper-evident records with full action lineage and real-time audit evidence.'),
+            ],
+          },
+          {
+            text: 'Can you reconstruct what an agent did and why?',
+            description: 'Probes traceability and replayability of past agent actions.',
+            order: 2,
+            options: [
+              etomOption(1, 'Best-effort', 'No traceability chain; reconstruction is guesswork from partial logs.'),
+              etomOption(2, 'Partial visibility', 'Logs exist across systems but cannot be stitched into a coherent narrative.'),
+              etomOption(3, 'Audit-ready', 'Audit-ready traceability across systems with full context per action.'),
+              etomOption(4, 'Full replay', 'Each action can be replayed against the same identity, policy, and inputs to reproduce the decision.'),
+            ],
+          },
+        ],
+      },
+    ]
+  )
+
   // ── Sample Assessments with Responses ──────────────────────────────
 
   const cloudQuestions = await getQuestions(cloudType)
   const devopsQuestions = await getQuestions(devopsType)
   const dataQuestions = await getQuestions(dataType)
   const iacQuestions = await getQuestions(iacType)
+  const etomQuestions = await getQuestions(etomType)
 
   // Assessment 1: Completed Cloud Assessment for Acme Corp
   await findOrCreateAssessment(
@@ -1119,6 +1311,38 @@ async function main() {
         'TFE upgrade process documented. Consistent manual execution. Working toward automation.',
         'Onboarding process partially documented. Mostly manual workspace and VCS configuration.',
         'Training resources growing. Quarterly brown bag sessions. Feedback collected informally.',
+      ][i] || null,
+    }))
+  )
+
+  // ── Agentic AI Security (ETOM) sample assessment ───────────────────
+
+  // Acme Corp — mid-maturity org adopting Vault for agent identity but still
+  // catching up on decision/authorization governance. Scores cluster around 2-3.
+  await findOrCreateAssessment(
+    'Agentic AI Security Baseline Q2 2026',
+    'Acme Corp',
+    customerIds['Acme Corp'],
+    etomType,
+    moayadUserId,
+    'completed',
+    etomQuestions.map((q, i) => ({
+      questionId: q.id,
+      // Order matches the seed: Request×3, Decision×3, Execution×2, Authority×2, Provenance×2
+      score: [2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 3, 2][i] || 2,
+      commentary: [
+        'Each agent has its own service account in Okta. Credentials stored in Vault and rotated weekly, but they are still long-lived bearer tokens.',
+        'Vault rotates secrets on a schedule; not yet brokering short-lived per-request credentials at runtime.',
+        'NHIs catalogued in a spreadsheet; basic CloudTrail-style activity logs exist but no intent metadata.',
+        'OPA policies live in a central repo; updates ship via a manual PR + plan-and-apply workflow.',
+        'Policy checks run inline at action time. Pre-execution validation only for the highest-risk paths.',
+        'Decisions are emitted to the SIEM but rarely include the full policy or input context.',
+        'SPIFFE/Vault rolling out for new agents; legacy agents still use brokered tokens behind a proxy.',
+        'Network segmentation in place; runtime least-privilege only enforced for the new SPIFFE-enabled agents.',
+        'Approval flows are role-based via PagerDuty; mostly humans-in-the-loop for sensitive actions.',
+        'Annual entitlement review cycle; most service-account roles change rarely between reviews.',
+        'Splunk aggregates logs in a standard format; cross-system correlation in place for the top use cases.',
+        'Logs exist but stitching an end-to-end agent action narrative still requires manual analyst work.',
       ][i] || null,
     }))
   )
