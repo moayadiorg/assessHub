@@ -4,12 +4,15 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3005",
+    "dev:local": "npm run db:up && npm run db:init && npm run db:seed && npm run dev",
+    "dev:full": "npm run db:up && npm run db:init && npm run db:seed && docker compose -f docker-compose.dev.full.yml up -d --build app --wait",
+    "dev:full:down": "docker compose -f docker-compose.dev.full.yml down",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:up": "docker compose -f docker-compose.dev.yml up -d",
+    "db:up": "docker compose -f docker-compose.dev.yml up -d --wait",
     "db:down": "docker compose -f docker-compose.dev.yml down",
-    "db:reset": "docker compose -f docker-compose.dev.yml down -v && docker compose -f docker-compose.dev.yml up -d",
+    "db:reset": "docker compose -f docker-compose.dev.yml down -v && docker compose -f docker-compose.dev.yml up -d --wait && npm run db:init && npm run db:seed",
     "db:seed": "node --env-file=.env --import tsx db/seed.ts",
     "db:init": "node --env-file=.env scripts/db-seed.mjs"
   },
